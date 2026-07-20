@@ -1,4 +1,4 @@
-# LiteRT.js Image Upscaler
+# Image Upscaler
 
 Browser-only image super-resolution using ONNX Runtime Web. Runs completely client-side with no backend required.
 
@@ -85,11 +85,17 @@ Output in `dist/` folder.
 
 ## Deployment
 
-Deploy `dist/` to any static host:
-- GitHub Pages
-- Cloudflare Pages
-- Netlify
-- Vercel
+Deploy `dist/` to any static host.
+
+### GitHub Pages
+
+1. In your repository, go to **Settings > Pages**.
+2. Set **Build and deployment** to **GitHub Actions**.
+3. Push to `main` to build and publish automatically.
+
+The app uses a relative Vite base path, so it works when hosted as a project page like `https://<user>.github.io/<repo>/`.
+
+For a local publish flow, run `npm run deploy` to build and push `dist/` to the `gh-pages` branch, then set Pages to serve from that branch if you prefer manual deployment.
 
 ## Browser Compatibility
 
