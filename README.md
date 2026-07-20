@@ -4,29 +4,54 @@ Browser-only image super-resolution using ONNX Runtime Web. Runs completely clie
 
 ## Features
 
-- Drag & Drop image upload
-- File picker support
-- PNG, JPG, JPEG, WEBP support
-- Maximum image size: 4096×4096
+- Drag & drop image upload
+- PNG, JPG, WEBP support
+- Maximum input size: 4096×4096
+- Two models: ESPCN (fast, 3×) and Real-ESRGAN (high quality, 4×)
 - WebGPU/WASM runtime with automatic detection
-- Canvas-based bicubic fallback
+- Tiled inference for large images
+- Side-by-side before/after comparison slider
 - Download upscaled result as PNG
 
 ## Project Structure
 
 ```
 litert-upscaler/
-├── index.html          # Main UI
-├── style.css           # Dark responsive CSS
-├── script.js           # Vanilla JS + ONNX Runtime Web
-├── vite.config.js      # Vite config (COOP/COEP headers)
-├── package.json        # Dependencies
+├── index.html
+├── package.json         # React, Vite, Tailwind
+├── vite.config.ts       # COOP/COEP headers, port 3000
+├── tsconfig.json
+├── tailwind.config.js
+├── postcss.config.js
 ├── models/
-│   ├── model.onnx      # ONNX super-resolution model (240KB)
-│   └── README.md       # Model instructions
-└── libs/
-    ├── ort-wasm.wasm      # WASM runtime
-    └── ort-wasm-simd.wasm  # SIMD WASM
+│   ├── model.onnx              # ESPCN (235KB, 3×, Y-channel)
+│   ├── Real-ESRGAN-x4plus.onnx # Real-ESRGAN (~65MB, 4×, RGB)
+│   └── README.md
+├── libs/
+│   ├── ort-wasm.wasm
+│   └── ort-wasm-simd.wasm
+└── src/
+    ├── main.tsx
+    ├── App.tsx
+    ├── constants.ts        # Model configs, backend detection
+    ├── types.ts
+    ├── hooks/
+    │   ├── useONNX.ts      # ONNX Runtime lifecycle
+    │   ├── useImageFile.ts # File validation & reading
+    │   └── useUpscale.ts   # Multi-pass upscale pipeline
+    ├── utils/
+    │   ├── upscale.ts      # ONNX session + tiled inference
+    │   └── imageProcessing.ts  # Color space conversion
+    └── components/
+        ├── Header.tsx
+        ├── StepIndicator.tsx
+        ├── UploadArea.tsx
+        ├── ImageComparison.tsx  # Before/after slider
+        ├── ControlPanel.tsx
+        ├── ModelInfoPanel.tsx
+        ├── ProgressCard.tsx
+        ├── StatsBar.tsx
+        └── ErrorMessage.tsx
 ```
 
 ## Installation
@@ -41,7 +66,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 (or next available port)
+Open http://localhost:3000
 
 ## Building
 
@@ -51,12 +76,12 @@ npm run build
 
 Output in `dist/` folder.
 
-## Model Included
+## Models
 
-The app includes `models/model.onnx` - ONNX Model Zoo Super-Resolution-10:
-- 240KB ONNX model
-- 224×224 → 448×448 (2x upscale)
-- Uses Y (luminance) channel processing
+| Model | Scale | Channels | Size | Speed |
+|-------|-------|----------|------|-------|
+| ESPCN | 3× | Y (luminance) | 235KB | ~50ms/tile |
+| Real-ESRGAN | 4× | RGB | 65MB | ~1-3s/tile |
 
 ## Deployment
 
@@ -79,7 +104,7 @@ Deploy `dist/` to any static host:
 
 **Model fails to load**
 - Check browser console for errors
-- Model may be too large for mobile browsers
+- Real-ESRGAN is ~65MB and may take time to download
 
 **Slow inference**
 - Enable WebAssembly SIMD
@@ -87,3 +112,4 @@ Deploy `dist/` to any static host:
 
 **Memory errors**
 - Reduce input image size
+- Use ESPCN model instead of Real-ESRGAN
