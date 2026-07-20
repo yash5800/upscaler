@@ -65,9 +65,9 @@ export default function App() {
     } catch (err: any) {
       setError(err.message || 'Upscaling failed.');
       setStep('config');
+      setProgress({ percent: 0, text: '' });
     } finally {
       setIsProcessing(false);
-      setProgress({ percent: 0, text: '' });
     }
   }, [imageData, isProcessing, modelLoading, upscale, modelKey]);
 

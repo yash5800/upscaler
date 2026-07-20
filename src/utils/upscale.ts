@@ -3,13 +3,14 @@ import type { ModelKey } from '../types';
 
 interface OrtModule {
   InferenceSession: {
-    create: (path: string) => Promise<InferenceSession>;
+    create: (path: string | Uint8Array) => Promise<InferenceSession>;
   };
   Tensor: new (type: string, data: Float32Array, shape: number[]) => Tensor;
   env: {
     wasm: {
       wasmPaths: string;
       proxy: boolean;
+      numThreads?: number;
     };
   };
 }
@@ -31,12 +32,28 @@ export async function loadONNX(): Promise<OrtModule> {
   ort.env.wasm.wasmPaths =
     'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
   ort.env.wasm.proxy = true;
+  if (!crossOriginIsolated) {
+    ort.env.wasm.numThreads = 1;
+  }
   return ort;
+}
+
+async function fetchModelWithCache(path: string): Promise<Uint8Array> {
+  const cache = await caches.open('onnx-models');
+  const cached = await cache.match(path);
+  if (cached) {
+    return new Uint8Array(await cached.arrayBuffer());
+  }
+  const res = await fetch(path);
+  const data = new Uint8Array(await res.arrayBuffer());
+  cache.put(path, new Response(data));
+  return data;
 }
 
 export async function createSession(ort: OrtModule, modelKey: ModelKey): Promise<InferenceSession> {
   const m = MODELS[modelKey];
-  return ort.InferenceSession.create(m.file);
+  const data = await fetchModelWithCache(m.file);
+  return ort.InferenceSession.create(data);
 }
 
 export async function runPass(
