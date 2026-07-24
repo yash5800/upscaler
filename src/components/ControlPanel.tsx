@@ -1,5 +1,7 @@
+import React from 'react';
 import { MODELS } from '../constants';
-import type { ModelKey, Step } from '../types';
+import type { ModelKey, Step, EnhancementOptions } from '../types';
+import EnhancementCards from './EnhancementCards';
 
 interface ControlPanelProps {
   modelKey: ModelKey;
@@ -7,9 +9,11 @@ interface ControlPanelProps {
   isProcessing: boolean;
   isLoading: boolean;
   hasResult: boolean;
+  options: EnhancementOptions;
+  onOptionsChange: (newOptions: EnhancementOptions) => void;
   onModelChange: (key: ModelKey) => void;
   onUpscale: () => void;
-  onDownload: () => void;
+  onDownload: (format?: 'png' | 'webp' | 'jpeg') => void;
 }
 
 export default function ControlPanel({
@@ -18,6 +22,8 @@ export default function ControlPanel({
   isProcessing,
   isLoading,
   hasResult,
+  options,
+  onOptionsChange,
   onModelChange,
   onUpscale,
   onDownload,
@@ -26,85 +32,104 @@ export default function ControlPanel({
   const showControls = step === 'config' || step === 'processing' || step === 'result';
 
   if (!showControls) return null;
-
   const busy = isProcessing || isLoading;
 
   return (
-    <section className="mb-6 animate-slide-up">
-      <div className="bg-surface-card border border-border rounded-2xl p-4">
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-surface border border-border rounded-lg px-3 py-1.5">
-            <label htmlFor="model-select" className="text-xs font-medium text-muted-dark">Model</label>
-            <select
-              id="model-select"
-              value={modelKey}
-              onChange={(e) => onModelChange(e.target.value as ModelKey)}
-              disabled={busy}
-              className="bg-transparent text-sm font-semibold text-white border-none outline-none cursor-pointer disabled:opacity-40 font-sans"
-            >
-              <option value="espcn">ESPCN</option>
-              <option value="realesrgan">Real-ESRGAN</option>
-            </select>
+    <section className="mb-8 animate-slide-up">
+      <div className="glass-card rounded-2xl p-6 border border-white/10 shadow-2xl space-y-6">
+        {/* Model Engine Picker */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-muted uppercase tracking-wider">AI Model Engine:</span>
+            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => onModelChange('espcn')}
+                disabled={busy}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  modelKey === 'espcn'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-muted hover:text-white'
+                }`}
+              >
+                ESPCN Turbo (60fps)
+              </button>
+              <button
+                type="button"
+                onClick={() => onModelChange('realesrgan')}
+                disabled={busy}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  modelKey === 'realesrgan'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-muted hover:text-white'
+                }`}
+              >
+                Real-ESRGAN Studio (8K)
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5" id="model-badges">
-            <ModelBadge color="teal">{m.badges.quality}</ModelBadge>
-            <ModelBadge color="amber">{m.badges.time}</ModelBadge>
-            <ModelBadge color="coral">{m.badges.req}</ModelBadge>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-accent/10 text-accent font-bold border border-accent/20">
+              {m.badges.quality}
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-white/5 text-muted font-mono border border-white/10">
+              {m.badges.time}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+        {/* AI Enhancement Cards Selector */}
+        <EnhancementCards
+          options={options}
+          onChange={onOptionsChange}
+          disabled={busy}
+        />
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-center gap-4 pt-4 border-t border-white/10 flex-wrap">
           <button
             onClick={onUpscale}
             disabled={busy}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white
-              bg-gradient-to-r from-accent to-[#8b7cf7]
-              shadow-lg shadow-accent-glow
-              hover:shadow-xl hover:shadow-accent-glow hover:-translate-y-0.5
-              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg
-              transition-all duration-200 active:translate-y-0"
             type="button"
+            className="group relative px-10 py-4 rounded-xl text-base font-extrabold text-white
+              bg-gradient-to-r from-primary via-indigo-500 to-accent
+              shadow-xl shadow-primary/30
+              hover:shadow-2xl hover:shadow-accent/40 hover:-translate-y-0.5
+              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0
+              transition-all duration-200 active:translate-y-0 flex items-center gap-3"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
+            <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            {isProcessing ? 'Processing...' : hasResult ? 'Upscale Again' : 'Upscale Image'}
+            <span>{isProcessing ? 'Processing AI Tensor...' : hasResult ? 'Re-Enhance 8K Image' : 'Start 8K AI Upscale (Enter)'}</span>
           </button>
 
           {hasResult && (
-            <button
-              onClick={onDownload}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white
-                bg-surface-card border border-border
-                hover:bg-surface-hover hover:border-muted-dark
-                transition-all duration-200"
-              type="button"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Download PNG
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onDownload('png')}
+                type="button"
+                className="px-6 py-4 rounded-xl font-bold text-sm text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Download 8K PNG</span>
+              </button>
+
+              <button
+                onClick={() => onDownload('webp')}
+                type="button"
+                className="px-4 py-4 rounded-xl font-bold text-xs text-muted hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                title="Download WebP format"
+              >
+                WebP
+              </button>
+            </div>
           )}
         </div>
       </div>
     </section>
-  );
-}
-
-function ModelBadge({ color, children }: { color: string; children: React.ReactNode }) {
-  const colorClasses: Record<string, string> = {
-    teal: 'text-teal border-teal/20 bg-teal/5',
-    amber: 'text-amber border-amber/20 bg-amber/5',
-    coral: 'text-coral border-coral/20 bg-coral/5',
-  };
-  return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${colorClasses[color] || colorClasses.teal}`}>
-      {children}
-    </span>
   );
 }

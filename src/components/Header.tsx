@@ -1,45 +1,81 @@
-import type { Backend } from '../types';
+import React from 'react';
+import type { Backend, ViewTab } from '../types';
 
 interface HeaderProps {
   backend: Backend | null;
+  activeTab: ViewTab;
+  onTabChange: (tab: ViewTab) => void;
+  historyCount: number;
+  onOpenShortcuts: () => void;
 }
 
-export default function Header({ backend }: HeaderProps) {
+export default function Header({
+  backend,
+  activeTab,
+  onTabChange,
+  historyCount,
+  onOpenShortcuts,
+}: HeaderProps) {
   return (
-    <header className="flex items-center justify-between flex-wrap gap-3 mb-8">
-      <div className="flex items-center gap-3">
-        <svg width="36" height="36" viewBox="0 0 32 32" fill="none" className="shrink-0">
-          <rect x="2" y="2" width="28" height="28" rx="8" stroke="url(#g)" strokeWidth="2" />
-          <path d="M10 20l4-6 3 4 3-6 4 8" stroke="url(#g)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="32" y2="32">
-              <stop stopColor="#6c5ce7" />
-              <stop offset="1" stopColor="#a29bfe" />
-            </linearGradient>
-          </defs>
-        </svg>
+    <header className="sticky top-0 z-40 bg-[#09090B]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3 mb-6 flex flex-wrap items-center justify-between gap-4">
+      {/* Brand Logo */}
+      <div className="flex items-center gap-3 cursor-pointer" onClick={() => onTabChange('studio')}>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent p-0.5 shadow-lg shadow-primary/20">
+          <div className="w-full h-full bg-[#09090B] rounded-[10px] flex items-center justify-center text-accent">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white to-[#a29bfe] bg-clip-text text-transparent">
-            Image Upscaler
-          </h1>
-          <p className="text-xs text-muted-dark -mt-0.5">AI super-resolution powered by ONNX</p>
+          <div className="flex items-center gap-2">
+            <span className="font-black text-lg text-white tracking-tight">UPSCALER</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary/20 text-accent border border-accent/30">
+              2026 STUDIO
+            </span>
+          </div>
+          <p className="text-[11px] text-muted -mt-0.5">8K Creative Super-Resolution</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Navigation Tabs */}
+      <nav className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+        {[
+          { id: 'studio' as ViewTab, label: 'Studio Engine', icon: '🎨' },
+          { id: 'batch' as ViewTab, label: 'Batch Queue', icon: '📁' },
+          { id: 'history' as ViewTab, label: `History (${historyCount})`, icon: '🕒' },
+
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${activeTab === tab.id
+                ? 'bg-primary text-white shadow-md shadow-primary/20'
+                : 'text-muted hover:text-white hover:bg-white/5'
+              }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Action Indicators */}
+      <div className="flex items-center gap-3">
         {backend && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-border bg-surface-card text-muted">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal animate-pulse" />
-            Backend: <span className="text-white font-semibold">{backend.toUpperCase()}</span>
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-muted">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            {backend.toUpperCase()} local
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-border bg-surface-card text-teal">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          100% Private
-        </span>
+
+        <button
+          onClick={onOpenShortcuts}
+          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted hover:text-white text-xs font-mono transition-all"
+          title="Keyboard Shortcuts (?)"
+        >
+          ⌨️ ?
+        </button>
       </div>
     </header>
   );

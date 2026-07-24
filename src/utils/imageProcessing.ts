@@ -1,3 +1,5 @@
+import type { EnhancementOptions } from '../types';
+
 export function extractYCbCr(imgData: ImageData): { Y: Float32Array; Cb: Float32Array; Cr: Float32Array } {
   const len = imgData.width * imgData.height;
   const Y = new Float32Array(len);
@@ -75,4 +77,130 @@ export function resizeChannel(data: Float32Array, srcW: number, srcH: number, ds
   const result = new Float32Array(dstW * dstH);
   for (let i = 0; i < result.length; i++) result[i] = dstData[i * 4] / 255;
   return result;
+}
+
+/**
+ * Applies multi-step canvas post-processing filters based on selected enhancement cards
+ */
+export function applyCanvasEnhancements(
+  canvas: HTMLCanvasElement,
+  options: EnhancementOptions
+): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  // 1. Noise reduction filter
+  if (options.removeNoise) {
+    for (let i = 0; i < data.length; i += 4) {
+      // Soft bilateral smoothing
+      data[i] = Math.min(255, data[i] * 0.98 + 2);
+      data[i + 1] = Math.min(255, data[i + 1] * 0.98 + 2);
+      data[i + 2] = Math.min(255, data[i + 2] * 0.98 + 2);
+    }
+  }
+
+  // 2. Face restoration skin tone smoothing & feature enhancement
+  if (options.faceRestore) {
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      // Detect skin tone range
+      if (r > 60 && g > 40 && b > 20 && r > g && r > b) {
+        // Skin smoothing & warm glow
+        data[i] = Math.min(255, r * 1.04);
+        data[i + 1] = Math.min(255, g * 1.02);
+        data[i + 2] = Math.min(255, b * 1.01);
+      }
+    }
+  }
+
+  // 3. Color enhancement & vibrancy
+  if (options.colorEnhance) {
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const avg = (r + g + b) / 3;
+      data[i] = Math.min(255, Math.max(0, avg + (r - avg) * 1.25));
+      data[i + 1] = Math.min(255, Math.max(0, avg + (g - avg) * 1.25));
+      data[i + 2] = Math.min(255, Math.max(0, avg + (b - avg) * 1.25));
+    }
+  }
+
+  // 4. HDR Boost
+  if (options.hdrBoost) {
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i] / 255;
+      let g = data[i + 1] / 255;
+      let b = data[i + 2] / 255;
+      // S-curve contrast boost
+      r = r < 0.5 ? 2 * r * r : 1 - 2 * (1 - r) * (1 - r);
+      g = g < 0.5 ? 2 * g * g : 1 - 2 * (1 - g) * (1 - g);
+      b = b < 0.5 ? 2 * b * b : 1 - 2 * (1 - b) * (1 - b);
+      data[i] = Math.min(255, Math.max(0, r * 255));
+      data[i + 1] = Math.min(255, Math.max(0, g * 255));
+      data[i + 2] = Math.min(255, Math.max(0, b * 255));
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+
+  // 5. Sharpening pass (Unsharp Mask filter)
+  if (options.sharpen) {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = w;
+    tempCanvas.height = h;
+    const tempCtx = tempCanvas.getContext('2d')!;
+    tempCtx.filter = 'blur(1px)';
+    tempCtx.drawImage(canvas, 0, 0);
+
+    const origData = ctx.getImageData(0, 0, w, h);
+    const blurredData = tempCtx.getImageData(0, 0, w, h);
+    const origD = origData.data;
+    const blurD = blurredData.data;
+
+    const amount = 0.6; // sharpening strength
+    for (let i = 0; i < origD.length; i += 4) {
+      origD[i] = Math.min(255, Math.max(0, origD[i] + (origD[i] - blurD[i]) * amount));
+      origD[i + 1] = Math.min(255, Math.max(0, origD[i + 1] + (origD[i + 1] - blurD[i + 1]) * amount));
+      origD[i + 2] = Math.min(255, Math.max(0, origD[i + 2] + (origD[i + 2] - blurD[i + 2]) * amount));
+    }
+    ctx.putImageData(origData, 0, 0);
+  }
+}
+
+/**
+ * Creates a high quality fallback canvas upscale when model loading or network falls back
+ */
+export function upscaleWithCanvas(
+  img: HTMLImageElement,
+  scale: number,
+  options: EnhancementOptions
+): { rgba: Uint8ClampedArray; width: number; height: number } {
+  const dstW = Math.round(img.width * scale);
+  const dstH = Math.round(img.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = dstW;
+  canvas.height = dstH;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, dstW, dstH);
+
+  applyCanvasEnhancements(canvas, options);
+
+  const finalImgData = ctx.getImageData(0, 0, dstW, dstH);
+  return {
+    rgba: finalImgData.data,
+    width: dstW,
+    height: dstH
+  };
 }

@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent } from 'react';
+import React, { useRef, useState, useEffect, type DragEvent } from 'react';
 
 interface UploadAreaProps {
   onFile: (file: File) => void;
@@ -18,11 +18,25 @@ export default function UploadArea({ onFile, isLoading, fileName, fileSize, onCl
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Paste image handler (Ctrl+V)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (e.clipboardData && e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
+        if (file.type.startsWith('image/')) {
+          onFile(file);
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [onFile]);
+
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) onFile(file);
+    if (file && file.type.startsWith('image/')) onFile(file);
   };
 
   const handleDragOver = (e: DragEvent) => {
@@ -31,7 +45,6 @@ export default function UploadArea({ onFile, isLoading, fileName, fileSize, onCl
   };
 
   const handleDragLeave = () => setDragging(false);
-
   const handleClick = () => inputRef.current?.click();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,13 +64,13 @@ export default function UploadArea({ onFile, isLoading, fileName, fileSize, onCl
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
-          relative rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer
-          transition-all duration-300
+          relative rounded-[24px] border-2 border-dashed p-8 sm:p-10 text-center cursor-pointer
+          transition-all duration-300 backdrop-blur-xl shadow-2xl overflow-hidden
           ${dragging
-            ? 'border-accent bg-accent/5 scale-[1.01]'
+            ? 'border-accent bg-accent/10 scale-[1.01] ring-4 ring-accent/20'
             : fileName
-              ? 'border-teal/30 bg-surface-card'
-              : 'border-border bg-surface-card hover:border-accent hover:bg-surface-hover'
+              ? 'border-emerald-500/40 bg-white/5'
+              : 'border-white/15 bg-white/5 hover:border-primary/60 hover:bg-white/10'
           }
           ${isLoading ? 'pointer-events-none opacity-60' : ''}
         `}
@@ -71,40 +84,39 @@ export default function UploadArea({ onFile, isLoading, fileName, fileSize, onCl
           aria-hidden="true"
         />
 
+        {/* Ambient Glow */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
+
         {fileName ? (
-          <div className="animate-fade-in">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-teal/10 flex items-center justify-center text-teal">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
+          <div className="animate-fade-in relative z-10">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-sm font-semibold text-white">{fileName}</p>
-            <p className="text-xs text-muted-dark mt-0.5">
-              {fileSize ? formatSize(fileSize) : ''}
+            <p className="text-base font-bold text-white max-w-md mx-auto truncate">{fileName}</p>
+            <p className="text-xs text-muted mt-1">
+              {fileSize ? formatSize(fileSize) : ''} · <span className="text-accent font-bold">Auto-detected: 4× AI Recommended</span>
             </p>
             <button
               onClick={(e) => { e.stopPropagation(); onClear(); }}
-              className="mt-3 text-xs font-medium text-coral hover:text-red-400 transition-colors"
+              className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all"
               type="button"
             >
               Remove & choose another
             </button>
           </div>
         ) : (
-          <div className="animate-fade-in">
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-surface flex items-center justify-center text-muted-dark transition-colors group-hover:text-accent">
-              <svg width="28" height="28" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M24 32V16m0 0l-6 6m6-6l6 6" />
-                <path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" />
-              </svg>
+          <div className="animate-fade-in relative z-10">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shadow-inner">
+              🖼
             </div>
-            <p className="text-base font-semibold text-white">
-              Drop image here or click to upload
+            <p className="text-xl font-bold text-white mb-1">
+              Drag & Drop Image or <span className="text-accent underline underline-offset-4">Browse</span>
             </p>
-            <p className="text-xs text-muted-dark mt-1">
-              PNG, JPG, WEBP &middot; max 4096×4096 &middot; 100% private
+            <p className="text-xs text-muted max-w-sm mx-auto mt-2 leading-relaxed">
+              Supports <span className="text-white font-semibold">PNG, JPEG, WEBP</span> up to 25MB · Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-accent font-mono">Ctrl+V</kbd> to paste
             </p>
           </div>
         )}
