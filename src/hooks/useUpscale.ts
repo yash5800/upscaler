@@ -7,7 +7,7 @@ import {
   rgbaFromTensor, 
   resizeChannel, 
   applyCanvasEnhancements,
-  upscaleWithCanvas 
+  
 } from '../utils/imageProcessing';
 import { runPass } from '../utils/upscale';
 import type { ModelKey, UpscaleResult, ProgressState, EnhancementOptions } from '../types';
@@ -46,11 +46,17 @@ export function useUpscale({ ortRef, sessionRef }: UseUpscaleParams): UseUpscale
 
       const start = performance.now();
       const enhancementsApplied: string[] = [];
-      if (options.faceRestore) enhancementsApplied.push('Face Restoration');
-      if (options.removeNoise) enhancementsApplied.push('Noise Reduction');
-      if (options.sharpen) enhancementsApplied.push('Edge Sharpening');
-      if (options.colorEnhance) enhancementsApplied.push('Color Enhancement');
-      if (options.hdrBoost) enhancementsApplied.push('HDR Dynamic Range');
+      const faceLevel = (options as any).faceRestoreLevel ?? (options.faceRestore ? 60 : 0);
+      const noiseLevel = (options as any).removeNoiseLevel ?? (options.removeNoise ? 50 : 0);
+      const sharpLevel = (options as any).sharpenLevel ?? (options.sharpen ? 60 : 0);
+      const colorLevel = (options as any).colorLevel ?? (options.colorEnhance ? 60 : 0);
+      const hdrLevel = (options as any).hdrLevel ?? (options.hdrBoost ? 60 : 0);
+
+      if (faceLevel > 0) enhancementsApplied.push('Face Restoration');
+      if (noiseLevel > 0) enhancementsApplied.push('Noise Reduction');
+      if (sharpLevel > 0) enhancementsApplied.push('Edge Sharpening');
+      if (colorLevel > 0) enhancementsApplied.push('Color Enhancement');
+      if (hdrLevel > 0) enhancementsApplied.push('HDR Dynamic Range');
 
       // Multi-stage visual logging steps
       const steps = [

@@ -1,3 +1,4 @@
+// components/ControlPanel.tsx
 import React from 'react';
 import { MODELS } from '../constants';
 import type { ModelKey, Step, EnhancementOptions } from '../types';

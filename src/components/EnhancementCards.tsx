@@ -1,3 +1,4 @@
+// components/EnhancementCards.tsx
 import React from 'react';
 import type { EnhancementOptions, ScaleFactor } from '../types';
 

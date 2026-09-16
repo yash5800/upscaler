@@ -19,7 +19,7 @@ export default function Header({
   return (
     <header className="sticky top-0 z-40 bg-[#09090B]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3 mb-6 flex flex-wrap items-center justify-between gap-4">
       {/* Brand Logo */}
-      <div className="flex items-center gap-3 cursor-pointer" onClick={() => onTabChange('studio')}>
+      <div className="flex items-center gap-3 cursor-pointer" onClick={() => onTabChange('upscaler')}>
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent p-0.5 shadow-lg shadow-primary/20">
           <div className="w-full h-full bg-[#09090B] rounded-[10px] flex items-center justify-center text-accent">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +41,7 @@ export default function Header({
       {/* Navigation Tabs */}
       <nav className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
         {[
-          { id: 'studio' as ViewTab, label: 'Studio Engine', icon: '🎨' },
+          { id: 'upscaler' as ViewTab, label: 'Studio Engine', icon: '🎨' },
           { id: 'batch' as ViewTab, label: 'Batch Queue', icon: '📁' },
           { id: 'history' as ViewTab, label: `History (${historyCount})`, icon: '🕒' },
 

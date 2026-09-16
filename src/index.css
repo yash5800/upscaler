@@ -1,61 +1,175 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  --bg-primary: #050507;
+  --bg-surface: #0E0E12;
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(14, 14, 18, 0.75);
+  --nav-bg: rgba(5, 5, 7, 0.7);
+  --brand-gradient: linear-gradient(135deg, #FFFFFF 0%, #00FF85 100%);
   color-scheme: dark;
+}
+
+html.light {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --border-color: rgba(15, 23, 42, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --nav-bg: rgba(255, 255, 255, 0.75);
+  --brand-gradient: linear-gradient(135deg, #0F172A 0%, #00C86A 100%);
+  color-scheme: light;
 }
 
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
-  background-color: #09090B;
-  color: #FFFFFF;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode specific element overrides */
+html.light .app-shell {
+  background: radial-gradient(circle at 50% 30%, rgba(0, 255, 133, 0.05) 0%, rgba(248, 250, 252, 0.9) 70%, #F8FAFC 100%);
+}
+
+html.light .bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+}
+
+html.light .glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+}
+
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-muted {
+  color: #64748B !important;
+}
+
+html.light .bg-neutral-950,
+html.light [class*="bg-[#09090B]"],
+html.light [class*="bg-[#18181B]"] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-surface\/70,
+html.light .bg-surface\/90,
+html.light .bg-surface\/50 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html.light .border-white\/10,
+html.light .border-white\/5,
+html.light .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html.light .bg-white\/5,
+html.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light .bg-white\/5:hover,
+html.light .bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.08) !important;
 }
 
 /* Custom Grid Pattern Background */
 .bg-grid-pattern {
   background-size: 32px 32px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 }
 
 .bg-radial-vignette {
-  background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.15) 0%, rgba(9, 9, 11, 0.85) 60%, #09090B 100%);
+  background: radial-gradient(circle at 50% 30%, rgba(0, 255, 133, 0.08) 0%, rgba(5, 5, 7, 0.95) 70%, #050507 100%);
+}
+
+/* Creative Mint Accent Glow Utilities */
+.mint-glow-sm {
+  box-shadow: 0 0 20px rgba(0, 255, 133, 0.2);
+}
+
+.mint-glow-lg {
+  box-shadow: 0 0 40px rgba(0, 255, 133, 0.35);
+}
+
+.mint-border-hover {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.mint-border-hover:hover {
+  border-color: rgba(0, 255, 133, 0.5);
+  box-shadow: 0 10px 40px -10px rgba(0, 255, 133, 0.25);
 }
 
 /* Glassmorphism utility */
 .glass-card {
-  background: rgba(24, 24, 27, 0.65);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
 }
 
-.glass-card-hover {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.glass-nav {
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
-.glass-card-hover:hover {
-  background: rgba(30, 30, 35, 0.8);
-  border-color: rgba(99, 102, 241, 0.35);
-  transform: translateY(-2px);
-  box-shadow: 0 25px 90px rgba(99, 102, 241, 0.15);
+/* Perspective 3D Card Hover Effects */
+.perspective-container {
+  perspective: 1200px;
 }
 
-.glass-input {
-  background: rgba(18, 18, 24, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
 }
 
-.glass-input:focus {
-  border-color: #6366F1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+.card-3d:hover {
+  transform: translateY(-6px) rotateX(2deg) rotateY(-2deg);
+  border-color: rgba(0, 255, 133, 0.4);
+  box-shadow: 0 24px 70px rgba(0, 255, 133, 0.15);
+}
+
+/* Giant Typography for Footer (matching reference image) */
+.footer-giant-title {
+  font-size: clamp(4rem, 16vw, 19rem);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 60%, rgba(255,255,255,0.02) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+}
+
+html.light .footer-giant-title {
+  background: linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.3) 60%, rgba(15,23,42,0.05) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Gradient Text Utilities */
@@ -65,22 +179,16 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-.gradient-text-vibrant {
-  background: linear-gradient(135deg, #FFFFFF 20%, #818CF8 50%, #22D3EE 100%);
+html.light .gradient-text {
+  background: linear-gradient(135deg, #0F172A 0%, #475569 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.gradient-border {
-  position: relative;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(34, 211, 238, 0.2));
-  padding: 1px;
-}
-
-.gradient-border-inner {
-  background: #18181B;
-  border-radius: calc(1rem - 1px);
+.gradient-text-vibrant {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Custom Scrollbars */
@@ -111,4 +219,81 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+
+
+
+
+/* ==========================================================
+   PARAMETER SLIDER
+   ========================================================== */
+
+.parameter-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.parameter-slider::-moz-range-track {
+  height: 3px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+
+/* ==========================================================
+   THUMB
+   ========================================================== */
+
+.parameter-slider::-webkit-slider-thumb {
+  appearance: none;
+
+  width: 11px;
+  height: 11px;
+
+  margin-top: -4px;
+
+  border-radius: 50%;
+
+  border: 2px solid #181818;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.18),
+    0 2px 8px rgba(0,0,0,0.45);
+
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.parameter-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.08),
+    0 2px 10px rgba(0,0,0,0.5);
+}
+
+
+.parameter-slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+
+  border-radius: 50%;
+
+  border: 2px solid #181818;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.18),
+    0 2px 8px rgba(0,0,0,0.45);
 }

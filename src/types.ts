@@ -2,7 +2,8 @@ export type Step = 'upload' | 'config' | 'processing' | 'result';
 export type Backend = 'webgpu' | 'wasm';
 export type ModelKey = 'espcn' | 'realesrgan';
 export type ScaleFactor = 2 | 4 | 8;
-export type ViewTab = 'studio' | 'batch' | 'history' | 'prompts';
+export type ViewTab = 'home' | 'upscaler' | 'bg_remove' | 'history' | 'prompts' | 'batch';
+export type ThemeMode = 'dark' | 'light' | 'system';
 export type CompareMode = 'slider' | 'sideBySide' | 'zoomLens';
 
 export interface ModelBadges {
@@ -42,6 +43,27 @@ export interface EnhancementOptions {
   hdrBoost: boolean;
 }
 
+// Extended numeric levels for more granular controls (backwards compatible)
+export interface EnhancementOptions {
+  // existing fields kept for compatibility
+  scale: ScaleFactor;
+  faceRestore: boolean;
+  removeNoise: boolean;
+  sharpen: boolean;
+  colorEnhance: boolean;
+  hdrBoost: boolean;
+
+  // numeric levels 0-100
+  sharpenLevel?: number;
+  removeNoiseLevel?: number;
+  faceRestoreLevel?: number;
+  colorLevel?: number;
+  hdrLevel?: number;
+  brightness?: number;
+  contrast?: number;
+  preset?: string;
+}
+
 export interface UpscaleResult {
   type: 'upscale';
   rgba: Uint8ClampedArray;
@@ -65,17 +87,18 @@ export interface ProgressState {
 
 export interface HistoryItem {
   id: string;
+  type?: 'upscale' | 'bg_remove';
   name: string;
-  originalWidth: number;
-  originalHeight: number;
-  upscaledWidth: number;
-  upscaledHeight: number;
-  scale: ScaleFactor;
+  originalWidth?: number;
+  originalHeight?: number;
+  upscaledWidth?: number;
+  upscaledHeight?: number;
+  scale?: ScaleFactor;
   timestamp: number;
   thumbnailUrl: string;
   resultUrl: string;
   timeMs: number;
-  enhancements: string[];
+  enhancements?: string[];
 }
 
 export interface BatchItem {
@@ -99,3 +122,32 @@ export interface BackgroundPrompt {
   prompt: string;
   tags: string[];
 }
+
+export interface BGJob {
+  id: string;
+  file: File;
+  name: string;
+  sourceUrl: string;
+  resultUrl: string | null;
+  resultBlob: Blob | null;
+  status: 'ready' | 'loading' | 'processing' | 'done' | 'error';
+  progress: number;
+  message: string;
+  elapsedMs?: number;
+}
+
+export interface BGHistoryRecord {
+  id: string;
+  name: string;
+  original: File;
+  result: Blob;
+  elapsedMs?: number;
+  updatedAt: number;
+}
+
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'info';
+  text: string;
+}
+

@@ -4,32 +4,39 @@ export default {
   theme: {
     extend: {
       colors: {
+        mint: {
+          DEFAULT: '#00FF85',
+          hover: '#00E599',
+          dark: '#00C86A',
+          glow: 'rgba(0, 255, 133, 0.25)',
+          muted: 'rgba(0, 255, 133, 0.12)',
+        },
         bg: '#09090B',
         'bg-secondary': '#111827',
         surface: { 
-          DEFAULT: '#12121e', 
-          card: '#18181B', 
-          hover: '#27272A',
-          glass: 'rgba(24, 24, 27, 0.6)'
+          DEFAULT: '#121215', 
+          card: '#16161A', 
+          hover: '#1E1E24',
+          glass: 'rgba(18, 18, 22, 0.75)'
         },
         border: 'rgba(255, 255, 255, 0.08)',
         'border-hover': 'rgba(255, 255, 255, 0.16)',
         primary: {
-          DEFAULT: '#6366F1',
-          hover: '#4F46E5',
-          glow: 'rgba(99, 102, 241, 0.3)'
+          DEFAULT: '#00FF85',
+          hover: '#00E599',
+          glow: 'rgba(0, 255, 133, 0.3)'
         },
         accent: { 
-          DEFAULT: '#22D3EE', 
-          hover: '#06B6D4', 
-          glow: 'rgba(34, 211, 238, 0.3)' 
+          DEFAULT: '#00FF85', 
+          hover: '#00E599', 
+          glow: 'rgba(0, 255, 133, 0.3)' 
         },
         purple: {
-          DEFAULT: '#9333EA',
-          glow: 'rgba(147, 51, 234, 0.3)'
+          DEFAULT: '#00FF85',
+          glow: 'rgba(0, 255, 133, 0.3)'
         },
-        pink: '#EC4899',
-        teal: '#0EA5E9',
+        pink: '#00FF85',
+        teal: '#00FF85',
         muted: '#A1A1AA',
         'muted-dark': '#71717A',
       },

@@ -82,6 +82,8 @@ export function resizeChannel(data: Float32Array, srcW: number, srcH: number, ds
 /**
  * Applies multi-step canvas post-processing filters based on selected enhancement cards
  */
+
+
 export function applyCanvasEnhancements(
   canvas: HTMLCanvasElement,
   options: EnhancementOptions
@@ -91,116 +93,376 @@ export function applyCanvasEnhancements(
 
   const w = canvas.width;
   const h = canvas.height;
+
   const imgData = ctx.getImageData(0, 0, w, h);
   const data = imgData.data;
 
-  // 1. Noise reduction filter
-  if (options.removeNoise) {
-    for (let i = 0; i < data.length; i += 4) {
-      // Soft bilateral smoothing
-      data[i] = Math.min(255, data[i] * 0.98 + 2);
-      data[i + 1] = Math.min(255, data[i + 1] * 0.98 + 2);
-      data[i + 2] = Math.min(255, data[i + 2] * 0.98 + 2);
-    }
-  }
+  // ---------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------
 
-  // 2. Face restoration skin tone smoothing & feature enhancement
-  if (options.faceRestore) {
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      // Detect skin tone range
-      if (r > 60 && g > 40 && b > 20 && r > g && r > b) {
-        // Skin smoothing & warm glow
-        data[i] = Math.min(255, r * 1.04);
-        data[i + 1] = Math.min(255, g * 1.02);
-        data[i + 2] = Math.min(255, b * 1.01);
+  const clamp = (value: number) =>
+    Math.max(0, Math.min(255, value));
+
+  const getLevel = (
+    value: unknown,
+    enabled: unknown,
+    fallback = 0
+  ) => {
+    if (typeof value === 'number') return value;
+    return enabled ? fallback : 0;
+  };
+
+  // ---------------------------------------------------------
+  // Levels
+  // ---------------------------------------------------------
+
+  const noiseLevel = getLevel(
+    (options as any).removeNoiseLevel,
+    options.removeNoise,
+    50
+  );
+
+  const faceLevel = getLevel(
+    (options as any).faceRestoreLevel,
+    options.faceRestore,
+    50
+  );
+
+  const colorLevel = getLevel(
+    (options as any).colorLevel,
+    options.colorEnhance,
+    50
+  );
+
+  const hdrLevel = getLevel(
+    (options as any).hdrLevel,
+    options.hdrBoost,
+    50
+  );
+
+  const sharpenLevel = getLevel(
+    (options as any).sharpenLevel,
+    options.sharpen,
+    50
+  );
+
+  const brightness =
+    typeof (options as any).brightness === 'number'
+      ? (options as any).brightness
+      : 50;
+
+  const contrast =
+    typeof (options as any).contrast === 'number'
+      ? (options as any).contrast
+      : 50;
+
+  // ---------------------------------------------------------
+  // 1. DENOISE
+  // ---------------------------------------------------------
+  //
+  // Simple browser-friendly neighborhood blur.
+  // Strength is controlled by removeNoiseLevel.
+  //
+
+  if (noiseLevel > 0) {
+    const strength = noiseLevel / 100;
+
+    const source = new Uint8ClampedArray(data);
+
+    const radius = strength > 0.66 ? 2 : 1;
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const index = (y * w + x) * 4;
+
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        let count = 0;
+
+        for (
+          let dy = -radius;
+          dy <= radius;
+          dy++
+        ) {
+          const py = y + dy;
+
+          if (py < 0 || py >= h) continue;
+
+          for (
+            let dx = -radius;
+            dx <= radius;
+            dx++
+          ) {
+            const px = x + dx;
+
+            if (px < 0 || px >= w) continue;
+
+            const neighbor =
+              (py * w + px) * 4;
+
+            r += source[neighbor];
+            g += source[neighbor + 1];
+            b += source[neighbor + 2];
+
+            count++;
+          }
+        }
+
+        const avgR = r / count;
+        const avgG = g / count;
+        const avgB = b / count;
+
+        data[index] =
+          source[index] * (1 - strength) +
+          avgR * strength;
+
+        data[index + 1] =
+          source[index + 1] * (1 - strength) +
+          avgG * strength;
+
+        data[index + 2] =
+          source[index + 2] * (1 - strength) +
+          avgB * strength;
       }
     }
   }
 
-  // 3. Color enhancement & vibrancy
-  if (options.colorEnhance) {
+  // ---------------------------------------------------------
+  // 2. FACE ENHANCEMENT
+  // ---------------------------------------------------------
+  //
+  // Lightweight skin-tone enhancement.
+  // This is NOT an AI face-restoration model.
+  //
+
+  if (faceLevel > 0) {
+    const strength = faceLevel / 100;
+
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
-      const avg = (r + g + b) / 3;
-      data[i] = Math.min(255, Math.max(0, avg + (r - avg) * 1.25));
-      data[i + 1] = Math.min(255, Math.max(0, avg + (g - avg) * 1.25));
-      data[i + 2] = Math.min(255, Math.max(0, avg + (b - avg) * 1.25));
+
+      const isSkin =
+        r > 60 &&
+        g > 35 &&
+        b > 20 &&
+        r > g &&
+        r > b &&
+        (r - b) > 15;
+
+      if (!isSkin) continue;
+
+      // Gentle skin-tone balancing
+      data[i] = clamp(
+        r + (255 - r) * 0.035 * strength
+      );
+
+      data[i + 1] = clamp(
+        g + (255 - g) * 0.018 * strength
+      );
+
+      data[i + 2] = clamp(
+        b + (255 - b) * 0.008 * strength
+      );
     }
   }
 
-  // 4. HDR Boost
-  if (options.hdrBoost) {
+  // ---------------------------------------------------------
+  // 3. COLOR ENHANCEMENT
+  // ---------------------------------------------------------
+
+  if (colorLevel > 0) {
+    const strength = colorLevel / 100;
+
+    // 1.0 at 0%
+    // ~1.35 at 100%
+    const saturation = 1 + 0.35 * strength;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const luminance =
+        0.299 * r +
+        0.587 * g +
+        0.114 * b;
+
+      data[i] = clamp(
+        luminance + (r - luminance) * saturation
+      );
+
+      data[i + 1] = clamp(
+        luminance + (g - luminance) * saturation
+      );
+
+      data[i + 2] = clamp(
+        luminance + (b - luminance) * saturation
+      );
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 4. HDR / LOCAL CONTRAST
+  // ---------------------------------------------------------
+
+  if (hdrLevel > 0) {
+    const strength = hdrLevel / 100;
+
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i] / 255;
       let g = data[i + 1] / 255;
       let b = data[i + 2] / 255;
-      // S-curve contrast boost
-      r = r < 0.5 ? 2 * r * r : 1 - 2 * (1 - r) * (1 - r);
-      g = g < 0.5 ? 2 * g * g : 1 - 2 * (1 - g) * (1 - g);
-      b = b < 0.5 ? 2 * b * b : 1 - 2 * (1 - b) * (1 - b);
-      data[i] = Math.min(255, Math.max(0, r * 255));
-      data[i + 1] = Math.min(255, Math.max(0, g * 255));
-      data[i + 2] = Math.min(255, Math.max(0, b * 255));
+
+      // Smooth S-curve.
+      const hdrAmount = 1 + 0.35 * strength;
+
+      r = 0.5 + (r - 0.5) * hdrAmount;
+      g = 0.5 + (g - 0.5) * hdrAmount;
+      b = 0.5 + (b - 0.5) * hdrAmount;
+
+      data[i] = clamp(r * 255);
+      data[i + 1] = clamp(g * 255);
+      data[i + 2] = clamp(b * 255);
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 5. BRIGHTNESS
+  // ---------------------------------------------------------
+  //
+  // 50 = original
+  // 0  = darker
+  // 100 = brighter
+  //
+
+  if (brightness !== 50) {
+    const brightnessOffset =
+      ((brightness - 50) / 50) * 100;
+
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] =
+        clamp(data[i] + brightnessOffset);
+
+      data[i + 1] =
+        clamp(data[i + 1] + brightnessOffset);
+
+      data[i + 2] =
+        clamp(data[i + 2] + brightnessOffset);
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 6. CONTRAST
+  // ---------------------------------------------------------
+  //
+  // 50 = original
+  // 0  = reduced contrast
+  // 100 = increased contrast
+  //
+
+  if (contrast !== 50) {
+    const normalized =
+      (contrast - 50) / 50;
+
+    const contrastFactor =
+      1 + normalized * 1.2;
+
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = clamp(
+        128 + (data[i] - 128) * contrastFactor
+      );
+
+      data[i + 1] = clamp(
+        128 + (data[i + 1] - 128) * contrastFactor
+      );
+
+      data[i + 2] = clamp(
+        128 + (data[i + 2] - 128) * contrastFactor
+      );
     }
   }
 
   ctx.putImageData(imgData, 0, 0);
 
-  // 5. Sharpening pass (Unsharp Mask filter)
-  if (options.sharpen) {
-    const tempCanvas = document.createElement('canvas');
+  // ---------------------------------------------------------
+  // 7. SHARPENING
+  // ---------------------------------------------------------
+
+  if (sharpenLevel > 0) {
+    const strength = sharpenLevel / 100;
+
+    const amount =
+      0.35 + 1.15 * strength;
+
+    const tempCanvas =
+      document.createElement('canvas');
+
     tempCanvas.width = w;
     tempCanvas.height = h;
-    const tempCtx = tempCanvas.getContext('2d')!;
-    tempCtx.filter = 'blur(1px)';
-    tempCtx.drawImage(canvas, 0, 0);
 
-    const origData = ctx.getImageData(0, 0, w, h);
-    const blurredData = tempCtx.getImageData(0, 0, w, h);
-    const origD = origData.data;
-    const blurD = blurredData.data;
+    const tempCtx =
+      tempCanvas.getContext('2d')!;
 
-    const amount = 0.6; // sharpening strength
-    for (let i = 0; i < origD.length; i += 4) {
-      origD[i] = Math.min(255, Math.max(0, origD[i] + (origD[i] - blurD[i]) * amount));
-      origD[i + 1] = Math.min(255, Math.max(0, origD[i + 1] + (origD[i + 1] - blurD[i + 1]) * amount));
-      origD[i + 2] = Math.min(255, Math.max(0, origD[i + 2] + (origD[i + 2] - blurD[i + 2]) * amount));
+    tempCtx.filter =
+      'blur(1px)';
+
+    tempCtx.drawImage(
+      canvas,
+      0,
+      0
+    );
+
+    const original =
+      ctx.getImageData(
+        0,
+        0,
+        w,
+        h
+      );
+
+    const blurred =
+      tempCtx.getImageData(
+        0,
+        0,
+        w,
+        h
+      );
+
+    const orig = original.data;
+    const blur = blurred.data;
+
+    for (
+      let i = 0;
+      i < orig.length;
+      i += 4
+    ) {
+      orig[i] = clamp(
+        orig[i] +
+        (orig[i] - blur[i]) *
+        amount
+      );
+
+      orig[i + 1] = clamp(
+        orig[i + 1] +
+        (orig[i + 1] - blur[i + 1]) *
+        amount
+      );
+
+      orig[i + 2] = clamp(
+        orig[i + 2] +
+        (orig[i + 2] - blur[i + 2]) *
+        amount
+      );
     }
-    ctx.putImageData(origData, 0, 0);
+
+    ctx.putImageData(
+      original,
+      0,
+      0
+    );
   }
-}
-
-/**
- * Creates a high quality fallback canvas upscale when model loading or network falls back
- */
-export function upscaleWithCanvas(
-  img: HTMLImageElement,
-  scale: number,
-  options: EnhancementOptions
-): { rgba: Uint8ClampedArray; width: number; height: number } {
-  const dstW = Math.round(img.width * scale);
-  const dstH = Math.round(img.height * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = dstW;
-  canvas.height = dstH;
-  const ctx = canvas.getContext('2d')!;
-
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, 0, 0, dstW, dstH);
-
-  applyCanvasEnhancements(canvas, options);
-
-  const finalImgData = ctx.getImageData(0, 0, dstW, dstH);
-  return {
-    rgba: finalImgData.data,
-    width: dstW,
-    height: dstH
-  };
 }
