@@ -43,7 +43,7 @@ html.light .app-shell {
 
 html.light .bg-grid-pattern {
   background-size: 32px 32px;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
 }
@@ -93,7 +93,7 @@ html.light .bg-white\/10:hover {
 /* Custom Grid Pattern Background */
 .bg-grid-pattern {
   background-size: 32px 32px;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 }
@@ -160,14 +160,14 @@ html.light .bg-white\/10:hover {
   line-height: 0.85;
   letter-spacing: -0.06em;
   text-transform: uppercase;
-  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.2) 60%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.2) 60%, rgba(255, 255, 255, 0.02) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   user-select: none;
 }
 
 html.light .footer-giant-title {
-  background: linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.3) 60%, rgba(15,23,42,0.05) 100%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.3) 60%, rgba(15, 23, 42, 0.05) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -212,18 +212,22 @@ html.light .gradient-text {
 
 /* Pulse shimmer for processing */
 .shimmer-bar {
-  background: linear-gradient(90deg, 
-    rgba(99, 102, 241, 0.8) 0%, 
-    rgba(34, 211, 238, 1) 50%, 
-    rgba(236, 72, 153, 0.8) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(99, 102, 241, 0.8) 0%,
+      rgba(34, 211, 238, 1) 50%,
+      rgba(236, 72, 153, 0.8) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 
@@ -266,8 +270,8 @@ html.light .gradient-text {
   background: #ffffff;
 
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.18),
-    0 2px 8px rgba(0,0,0,0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.45);
 
   transition:
     transform 150ms ease,
@@ -278,8 +282,8 @@ html.light .gradient-text {
   transform: scale(1.2);
 
   box-shadow:
-    0 0 0 3px rgba(255,255,255,0.08),
-    0 2px 10px rgba(0,0,0,0.5);
+    0 0 0 3px rgba(255, 255, 255, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 
@@ -294,6 +298,1169 @@ html.light .gradient-text {
   background: #ffffff;
 
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.18),
-    0 2px 8px rgba(0,0,0,0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+
+
+/* ==========================================================================
+   PIXELIFY HERO
+   ========================================================================== */
+/* ==========================================================================
+   PIXELIFY HERO
+   ========================================================================== */
+
+.hero,
+.pixelify-hero {
+  --hero-bg: #050507;
+
+  --hero-glow: rgba(0, 255, 133, 0.065);
+
+  --dim-1: rgba(255, 255, 255, 0.48);
+  --dim-2: rgba(255, 255, 255, 0.36);
+
+  --ghost: rgba(255, 255, 255, 0.72);
+
+  --focus: #ffffff;
+
+  --ai-hi: #ffffff;
+  --ai-lo: rgba(255, 255, 255, 0.25);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  width: 100vw !important;
+  max-width: 100vw !important;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
+  min-height: calc(100vh - 60px);
+  max-height: calc(100vh - 60px);
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: -12px;
+  padding: 16px 20px 22px;
+
+  background: var(--hero-bg);
+
+  text-align: center;
+}
+
+
+/* ==========================================================================
+   BACKGROUND GLOW
+   ========================================================================== */
+
+.hero::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  z-index: -2;
+
+  background:
+    radial-gradient(45% 38% at 52% 43%,
+      var(--hero-glow),
+      transparent 70%),
+    radial-gradient(60% 50% at 50% 100%,
+      rgba(0, 255, 133, 0.045),
+      transparent 70%);
+
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   BOTTOM GREEN ATMOSPHERE
+   ========================================================================== */
+
+.hero::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    radial-gradient(32% 20% at 50% 92%,
+      rgba(0, 255, 133, 0.12),
+      transparent 70%);
+
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   HERO BACKGROUND VIDEO
+   ========================================================================== */
+
+.hero-video-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-bg-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  max-width: none !important;
+  max-height: none !important;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.38;
+  filter: saturate(1.15) brightness(0.85);
+  pointer-events: none;
+}
+
+.hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 65% 55% at 50% 45%, rgba(5, 5, 7, 0.45) 0%, rgba(5, 5, 7, 0.8) 70%, #050507 100%),
+    linear-gradient(to bottom, rgba(5, 5, 7, 0.3) 0%, transparent 20%, transparent 75%, #050507 100%);
+  pointer-events: none;
+}
+
+
+
+/* ==========================================================================
+   CONTENT
+   ========================================================================== */
+
+.pixelify-hero .hero-inner {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  width: 100vw;
+  max-width: 100vw;
+
+  flex: 1;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 16px;
+
+  overflow: visible;
+}
+
+.pixelify-hero .hero-top-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 0;
+}
+
+
+/* ==========================================================================
+   HEADLINE
+   ========================================================================== */
+
+.pixelify-hero .headline {
+  position: relative;
+
+  width: 100%;
+  max-width: 100vw;
+
+  margin: 0;
+  padding: 0 16px;
+
+  box-sizing: border-box;
+
+  overflow: visible;
+
+  font-size:
+    clamp(36px,
+      5.2vw,
+      94px);
+
+  line-height: 0.98;
+
+  font-weight: 700;
+
+  letter-spacing: -0.045em;
+
+  text-align: center;
+}
+
+
+/* ==========================================================================
+   EACH LINE
+   ========================================================================== */
+
+.pixelify-hero .line {
+  display: block;
+
+  width: 100%;
+  max-width: none;
+
+  box-sizing: border-box;
+
+  white-space: nowrap;
+
+  margin: 0;
+
+  overflow: visible;
+
+  text-align: center;
+}
+
+
+/* ==========================================================================
+   STAIR-STEP COMPOSITION
+   ========================================================================== */
+
+.pixelify-hero .step-1 {
+  transform: translateX(3%);
+}
+
+.pixelify-hero .step-2 {
+  transform: translateX(1.5%);
+}
+
+.pixelify-hero .step-3 {
+  transform: translateX(0%);
+}
+
+.pixelify-hero .step-4 {
+  transform: translateX(-0.5%);
+}
+
+
+/* ==========================================================================
+   SPLITTEXT CHARACTER SAFETY
+   ========================================================================== */
+
+.pixelify-hero .headline .ht {
+  display: inline-block;
+
+  white-space: nowrap;
+
+  overflow: visible;
+}
+
+
+/*
+ * SplitText may wrap individual characters.
+ * Keep them visible during the reveal.
+ */
+
+.pixelify-hero .headline .char {
+  overflow: visible;
+}
+
+
+/* ==========================================================================
+   TEXT DEPTH
+   ========================================================================== */
+
+.pixelify-hero .line.dim-1 {
+  color: var(--dim-1);
+}
+
+.pixelify-hero .line.dim-2 {
+  color: var(--dim-2);
+}
+
+.pixelify-hero .line.bright {
+  color: var(--ghost);
+}
+
+
+/* ==========================================================================
+   FOCUS TEXT
+   ========================================================================== */
+
+.pixelify-hero .line.bright .ht {
+  color: var(--focus);
+}
+
+
+/* ==========================================================================
+   AI ORB
+   ========================================================================== */
+
+.pixelify-hero .glow-wrap {
+  display: inline-grid;
+
+  place-items: center;
+
+  vertical-align: -0.08em;
+
+  margin-left: 0.02em;
+
+  transform: scale(0.92);
+
+  /*
+   * Never allow the orb to be clipped.
+   */
+  overflow: visible;
+}
+
+
+/* ==========================================================================
+   PLUS
+   ========================================================================== */
+
+.pixelify-hero .plus {
+  color: rgba(255, 255, 255, 0.5);
+
+  font-weight: 400;
+
+  padding: 0 0.02em;
+}
+
+
+/* ==========================================================================
+   POWERED WORD (Default reverse gradient of Pixelify: lo to hi)
+   ========================================================================== */
+
+.pixelify-hero .line.bright .ht.word-powered,
+.pixelify-hero .line.bright .word-powered,
+.pixelify-hero .word-powered {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: visible;
+  font-weight: 700;
+
+  background:
+    linear-gradient(90deg,
+      var(--ai-lo),
+      var(--ai-hi));
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* When split into characters for animation, clear background-clip so chars can animate opacity */
+.pixelify-hero .word-powered.is-split,
+.pixelify-hero .ht.word-powered.is-split {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
+.pixelify-hero .word-powered .char {
+  background: transparent !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+
+/* ==========================================================================
+   PIXELIFY TOKEN (Gradient from hi to lo)
+   ========================================================================== */
+
+.pixelify-hero .line.bright .ht.ai-token,
+.pixelify-hero .line.bright .ai-token,
+.pixelify-hero .ai-token {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: visible;
+  font-size: 1.02em;
+  font-weight: 700;
+
+  background:
+    linear-gradient(90deg,
+      var(--ai-hi),
+      var(--ai-lo));
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* When split into characters for animation, clear background-clip so chars can animate opacity */
+.pixelify-hero .ai-token.is-split,
+.pixelify-hero .ht.ai-token.is-split {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
+.pixelify-hero .ai-token .char {
+  background: transparent !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+
+/* ==========================================================================
+   SUBTITLE
+   ========================================================================== */
+
+.pixelify-hero .sub {
+  position: relative;
+  z-index: 2;
+
+  width: min(700px, 90vw);
+
+  max-width: 700px;
+
+  margin: 18px auto 0;
+
+  font-size:
+    clamp(14px,
+      1.15vw,
+      17px);
+
+  line-height: 1.55;
+
+  color: rgba(255, 255, 255, 0.45);
+
+  font-weight: 400;
+
+  text-wrap: balance;
+}
+
+
+/* ==========================================================================
+   ACTIONS
+   ========================================================================== */
+
+.pixelify-hero .hero-actions {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  margin-top: 18px;
+}
+
+
+/* ==========================================================================
+   MAIN CTA
+   ========================================================================== */
+
+/*
+ * Kept for compatibility.
+ *
+ * Both buttons can now use .hero-secondary from Hero.tsx.
+ */
+
+.pixelify-hero .cta {
+  position: relative;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  padding: 14px 20px;
+
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: rgba(255, 255, 255, 0.7);
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.pixelify-hero .cta:hover {
+  color: #ffffff;
+
+  background: rgba(255, 255, 255, 0.07);
+
+  border-color: rgba(255, 255, 255, 0.2);
+
+  transform: translateY(-2px);
+}
+
+
+/* ==========================================================================
+   CTA ARROW
+   ========================================================================== */
+
+.pixelify-hero .cta-arrow {
+  display: inline-flex;
+
+  width: 23px;
+  height: 23px;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #00ff85;
+
+  color: #000;
+
+  font-size: 12px;
+
+  transition:
+    transform 0.25s ease;
+}
+
+
+.pixelify-hero .cta:hover .cta-arrow {
+  transform: translateX(3px);
+}
+
+
+/* ==========================================================================
+   SECONDARY BUTTON
+   ========================================================================== */
+
+.pixelify-hero .hero-secondary {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  padding: 14px 20px;
+
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: rgba(255, 255, 255, 0.7);
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.pixelify-hero .hero-secondary:hover {
+  color: #ffffff;
+
+  background: rgba(255, 255, 255, 0.07);
+
+  border-color: rgba(255, 255, 255, 0.2);
+
+  transform: translateY(-2px);
+}
+
+
+/*
+ * Arrow inside BG Remover / Launch AI Upscaler.
+ *
+ * Your Hero.tsx uses:
+ *
+ * <span>↗</span>
+ */
+
+.pixelify-hero .hero-secondary span {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 15px;
+
+  line-height: 1;
+
+  transition:
+    transform 0.25s ease;
+}
+
+
+.pixelify-hero .hero-secondary:hover span {
+  transform: translate(2px, -2px);
+}
+
+
+/* ==========================================================================
+   CTA GLOW
+   ========================================================================== */
+
+/* ==========================================================================
+   HERO SCROLL DOWN BUTTON
+   ========================================================================== */
+
+.pixelify-hero .hero-scroll-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+  margin-bottom: 20px;
+  padding-bottom: 0;
+}
+
+.pixelify-hero .hero-scroll-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 14px;
+  outline: none;
+  transition: transform 0.25s ease;
+}
+
+.pixelify-hero .hero-scroll-btn:hover {
+  transform: translateY(3px);
+}
+
+.pixelify-hero .hero-scroll-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.3s ease;
+}
+
+.pixelify-hero .hero-scroll-btn:hover .hero-scroll-text {
+  color: #00ff85;
+}
+
+.pixelify-hero .hero-scroll-pill {
+  width: 22px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  padding-top: 5px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pixelify-hero .hero-scroll-btn:hover .hero-scroll-pill {
+  border-color: rgba(0, 255, 133, 0.7);
+  box-shadow: 0 0 16px rgba(0, 255, 133, 0.3);
+}
+
+.pixelify-hero .hero-scroll-dot {
+  width: 4px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #00ff85;
+  box-shadow: 0 0 8px #00ff85;
+  animation: scroll-dot-bounce 1.7s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes scroll-dot-bounce {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  60% {
+    transform: translateY(12px);
+    opacity: 0.15;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+/* ==========================================================================
+   RESPONSIVE — TABLET
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+
+  .hero,
+  .pixelify-hero {
+    margin-top: -12px;
+    height: calc(100vh - 60px);
+    height: calc(100dvh - 60px);
+    min-height: calc(100vh - 60px);
+    padding: 16px 16px 20px;
+  }
+
+  .pixelify-hero .headline {
+    font-size:
+      clamp(34px,
+        6.2vw,
+        80px);
+  }
+
+  .pixelify-hero .step-1 {
+    transform: translateX(2.5%);
+  }
+
+  .pixelify-hero .step-2 {
+    transform: translateX(1.2%);
+  }
+
+  .pixelify-hero .step-3 {
+    transform: translateX(0%);
+  }
+
+  .pixelify-hero .step-4 {
+    transform: translateX(-0.4%);
+  }
+}
+
+
+/* ==========================================================================
+   RESPONSIVE — MOBILE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+
+  .hero,
+  .pixelify-hero {
+    margin-top: -12px;
+    height: auto;
+    min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
+
+    padding: 14px 12px 20px;
+  }
+
+  .pixelify-hero .hero-inner {
+    width: 100%;
+    max-width: none;
+
+    justify-content: center;
+  }
+
+  .pixelify-hero .headline {
+    width: 100%;
+
+    font-size:
+      clamp(34px,
+        10vw,
+        64px);
+
+    line-height: 1.02;
+
+    letter-spacing: -0.045em;
+  }
+
+
+  /*
+   * Mobile staircase becomes more subtle.
+   * This prevents horizontal clipping on narrow screens.
+   */
+
+  .pixelify-hero .step-1 {
+    transform: translateX(3%);
+  }
+
+  .pixelify-hero .step-2 {
+    transform: translateX(1.5%);
+  }
+
+  .pixelify-hero .step-3 {
+    transform: translateX(0%);
+  }
+
+  .pixelify-hero .step-4 {
+    transform: translateX(0%);
+  }
+
+
+  .pixelify-hero .line {
+    width: 100%;
+
+    white-space: nowrap;
+
+    overflow: visible;
+  }
+
+
+  .pixelify-hero .glow-wrap {
+    transform: scale(0.72);
+  }
+
+
+  .pixelify-hero .sub {
+    width: 92vw;
+
+    max-width: 520px;
+
+    margin-top: 28px;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+  }
+
+
+  .pixelify-hero .hero-actions {
+    flex-direction: column;
+
+    width: 100%;
+
+    margin-top: 22px;
+
+    gap: 10px;
+  }
+
+
+  .pixelify-hero .cta,
+  .pixelify-hero .hero-secondary {
+    width: min(320px, 100%);
+
+    box-sizing: border-box;
+  }
+}
+
+
+/* ==========================================================================
+   VERY SMALL MOBILE
+   ========================================================================== */
+
+@media (max-width: 420px) {
+
+  .hero,
+  .pixelify-hero {
+    min-height: calc(100vh - 60px);
+
+    padding: 12px 10px 18px;
+  }
+
+  .pixelify-hero .headline {
+    font-size:
+      clamp(30px,
+        9.7vw,
+        48px);
+
+    letter-spacing: -0.04em;
+  }
+
+  .pixelify-hero .step-1 {
+    transform: translateX(2%);
+  }
+
+  .pixelify-hero .step-2 {
+    transform: translateX(1%);
+  }
+
+  .pixelify-hero .step-3,
+  .pixelify-hero .step-4 {
+    transform: translateX(0);
+  }
+
+  .pixelify-hero .sub {
+    width: 94vw;
+
+    font-size: 13px;
+  }
+}
+
+
+/* ==========================================================================
+   LIGHT THEME
+   ========================================================================== */
+
+:root[data-theme='light'] .hero {
+  --hero-bg: #050507;
+}
+
+
+
+
+/* ------------------------------
+   PIXELIFY STORY
+------------------------------ */
+
+/* ------------------------------
+   PIXELIFY STORY
+------------------------------ */
+
+.pixelify-story {
+  --pixelify-accent: #c7ff00;
+  --pixelify-white: #ffffff;
+
+  position: relative;
+
+  width: 100%;
+  height: 720px;
+
+  overflow: hidden;
+
+  background: #050505;
+
+  color: var(--pixelify-white);
+
+  isolation: isolate;
+
+  contain: layout paint;
+}
+
+.pixelify-stage {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+}
+
+.pixelify-world {
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  /*
+   * IMPORTANT:
+   * Don't use inset: 0 here.
+   * The world is a coordinate system whose
+   * position is controlled by GSAP.
+   */
+  width: 0;
+  height: 0;
+
+  transform-origin: 0 0;
+
+  will-change: transform;
+
+  transform: translate3d(0, 0, 0);
+
+  backface-visibility: hidden;
+
+  -webkit-font-smoothing: antialiased;
+
+  z-index: 2;
+}
+
+.pixelify-word {
+  position: absolute;
+
+  display: block;
+
+  white-space: nowrap;
+
+  font-family:
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: -0.02em;
+
+  line-height: 0.78;
+
+  color: var(--pixelify-white);
+
+  opacity: 0;
+
+  user-select: none;
+
+  pointer-events: none;
+
+  will-change: transform, opacity;
+
+  transform: translate3d(0, 0, 0);
+
+  backface-visibility: hidden;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+.pixelify-accent {
+  color: var(--pixelify-accent);
+
+  text-shadow:
+    0 0 18px rgba(199, 255, 0, 0.08),
+    0 0 60px rgba(199, 255, 0, 0.035);
+}
+
+/* ------------------------------
+   VIGNETTE
+------------------------------ */
+
+.pixelify-vignette {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: 5;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 38%,
+      rgba(0, 0, 0, 0.38) 75%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+}
+
+/* ------------------------------
+   GRAIN
+------------------------------ */
+
+.pixelify-story::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: 10;
+
+  opacity: 0.035;
+
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+
+  mix-blend-mode: overlay;
+}
+
+/* ------------------------------
+   TABLET
+------------------------------ */
+
+@media (max-width: 900px) {
+  .pixelify-story {
+    height: 620px;
+  }
+}
+
+/* ------------------------------
+   MOBILE
+------------------------------ */
+
+@media (max-width: 640px) {
+  .pixelify-story {
+    height: 560px;
+  }
+
+  .pixelify-word {
+    letter-spacing: -0.025em;
+  }
+
+  .pixelify-accent {
+    text-shadow:
+      0 0 12px rgba(199, 255, 0, 0.06),
+      0 0 35px rgba(199, 255, 0, 0.02);
+  }
+
+  .pixelify-story::after {
+    opacity: 0.018;
+  }
+}
+
+/* ------------------------------
+   SMALL MOBILE
+------------------------------ */
+
+@media (max-width: 400px) {
+  .pixelify-story {
+    height: 520px;
+  }
+
+  .pixelify-story::after {
+    display: none;
+  }
+}
+
+/* ------------------------------
+   REDUCED MOTION
+------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .pixelify-word,
+  .pixelify-world {
+    will-change: auto;
+  }
+}
+
+
+
+
+/* ------------------------------
+   #######   Logo styles  #######
+------------------------------ */
+
+ @font-face {
+  font-family: "Minecrafter";
+  src: url("/fonts/Minecrafter.Reg.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
 }

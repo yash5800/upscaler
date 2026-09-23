@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ViewTab } from '../types';
 import Icon from './Icon';
+import Logo from './Logo';
 
 interface FooterProps {
   onTabChange: (tab: ViewTab) => void;
@@ -16,12 +17,10 @@ export default function Footer({ onTabChange }: FooterProps) {
           {/* LEFT HEADLINE */}
           <div className="max-w-sm flex flex-col gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-400 p-[1px]">
-                <div className="w-full h-full bg-neutral-950 rounded-[7px] flex items-center justify-center text-violet-400">
-                  <Icon name="spark" size={16} />
-                </div>
-              </div>
-              <span className="font-black text-xl text-white tracking-tight">Pixelify</span>
+              <Logo
+                size="sm"
+                className="origin-left scale-[0.72] sm:scale-[0.78]"
+              />
             </div>
             <h2 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
               Experience liftoff

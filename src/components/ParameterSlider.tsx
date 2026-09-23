@@ -121,7 +121,7 @@ const ParameterSlider: React.FC<ParameterSliderProps> = ({
             <Info
               size={13}
               strokeWidth={2}
-              className="text-white/35"
+              className="text-white/40 hover:text-white/70 transition-colors cursor-help"
             />
 
             <div
@@ -129,25 +129,26 @@ const ParameterSlider: React.FC<ParameterSliderProps> = ({
                 pointer-events-none
                 absolute
                 bottom-full
-                left-1/2
+                left-0
+                -translate-x-3
                 z-50
                 mb-2
                 hidden
-                w-56
-                -translate-x-1/2
-                rounded-lg
-                border border-white/[0.08]
-                bg-[#151515]
-                px-3
-                py-2
-                text-[11px]
+                w-64
+                rounded-xl
+                border border-white/15
+                bg-[#18181c]
+                p-3
+                text-[11.5px]
                 leading-relaxed
-                text-white/60
-                shadow-xl
+                text-white/90
+                shadow-[0_12px_32px_rgba(0,0,0,0.6)]
+                backdrop-blur-md
                 group-hover:block
               "
             >
-              {info}
+              <div className="relative z-10">{info}</div>
+              <div className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 border-b border-r border-white/15 bg-[#18181c]" />
             </div>
           </div>
         )}

@@ -16,11 +16,22 @@ import FAQSection from './components/FAQSection';
 import Footer from './components/Footer';
 
 import { useONNX } from './hooks/useONNX';
-import { useImageFile } from './hooks/useImageFile';
 import { useUpscale } from './hooks/useUpscale';
 import { makeId } from './lib/bgUtils';
 
+
+import TruckBg from './components/TruckBg';
+
+import {
+  playSuccessChime,
+  primeAudio,
+  requestNotificationPermission,
+  sendDesktopNotification,
+} from './utils/notifications';
+
 import CardDeck from './components/CardsTest';
+
+import PixelifyStory from './components/PixelifyStory';
 
 import type {
   Step,
@@ -33,6 +44,7 @@ import type {
   HistoryItem,
   BGJob,
   ToastMessage,
+  UpscaleItem,
 } from './types';
 
 const STORAGE_KEY = 'pixelify_upscaler_history_2026';
@@ -107,17 +119,14 @@ export default function App() {
 
   // Upscaler State Hooks
   const { ortRef, backend, sessionRef, isLoading: modelLoading, initONNX, loadModel } = useONNX();
-  const { imageData, isLoading: imageLoading, error: imageError, handleFile, clear: clearImage } = useImageFile();
   const { upscale } = useUpscale({ ortRef, sessionRef });
 
   const [step, setStep] = useState<Step>('upload');
-  const [modelKey, setModelKey] = useState<ModelKey>('espcn');
-  const [result, setResult] = useState<ProcessResult | null>(null);
+  const [items, setItems] = useState<UpscaleItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState<ProgressState>({ percent: 0, text: '' });
 
-  // AI Enhancement options
+  // AI Enhancement options defaults
   const DEFAULT_OPTIONS: EnhancementOptions = {
     scale: 4,
     faceRestore: true,
@@ -128,14 +137,14 @@ export default function App() {
     sharpenLevel: 60,
     removeNoiseLevel: 50,
     faceRestoreLevel: 60,
-    colorLevel: 0,
-    hdrLevel: 0,
+    sharpness: 50,
+    denoise: 50,
+    faceEnhancement: 50,
+    colorLevel: 50,
+    hdrLevel: 50,
     brightness: 50,
     contrast: 50,
   };
-
-  const [options, setOptions] = useState<EnhancementOptions>(DEFAULT_OPTIONS);
-  
 
   // Local Dual History State (Upscale & Cutouts)
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -171,107 +180,218 @@ export default function App() {
     initONNX();
   }, [initONNX]);
 
-  useEffect(() => {
-    if (imageData) {
-      setStep('config');
-      setError(null);
-      setResult(null);
-      loadModel(modelKey);
+  /* ----------------------------------------------------------
+     ADD UPSCALE FILE (Creates individual UpscaleItem)
+     ---------------------------------------------------------- */
+  const addUpscaleFile = useCallback((file: File) => {
+    if (file.size > MAX_FILE_SIZE) {
+      addToast('error', 'Please choose an image under 15 MB.');
+      return;
     }
-  }, [imageData, modelKey, loadModel]);
-
-  const handleModelChange = useCallback(
-    async (key: ModelKey) => {
-      setModelKey(key);
-      setResult(null);
-      setError(null);
-      const ok = await loadModel(key);
-      if (!ok) setError(`Failed to load ${key === 'espcn' ? 'ESPCN' : 'Real-ESRGAN'} model.`);
-    },
-    [loadModel]
-  );
-
-  const handleUpscale = useCallback(async () => {
-    if (!imageData || isProcessing || modelLoading) return;
-    setIsProcessing(true);
-    setStep('processing');
-    setError(null);
-    setResult(null);
-
-    try {
-      const res = await upscale(imageData.img, modelKey, options, (p: ProgressState) => setProgress(p));
-      setResult(res);
-      setStep('result');
-      setProgress({ percent: 100, text: 'Complete!' });
-
-      const historyRecord: HistoryItem = {
-        id: Math.random().toString(36).substring(2, 9),
-        type: 'upscale',
-        name: imageData.name,
-        originalWidth: imageData.width,
-        originalHeight: imageData.height,
-        upscaledWidth: res.width,
-        upscaledHeight: res.height,
-        scale: options.scale,
-        timestamp: Date.now(),
-        thumbnailUrl: imageData.url,
-        resultUrl: res.dataUrl || imageData.url,
-        timeMs: res.time,
-        enhancements: res.enhancementsApplied || [],
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const newItem: UpscaleItem = {
+        id: makeId(),
+        file,
+        name: file.name,
+        url,
+        img,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        size: file.size,
+        status: 'idle',
+        progress: { percent: 0, text: '' },
+        result: null,
+        error: null,
+        options: { ...DEFAULT_OPTIONS },
+        modelKey: 'espcn',
       };
-      addHistoryRecord(historyRecord);
-      addToast('success', `${imageData.name} upscaled successfully!`);
-    } catch (err: any) {
-      setError(err.message || 'Upscaling failed.');
+      setItems((prev) => [...prev, newItem]);
+      setSelectedId(newItem.id);
       setStep('config');
-      setProgress({ percent: 0, text: '' });
-      addToast('error', 'Upscaling encountered an error.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [imageData, isProcessing, modelLoading, upscale, modelKey, options, addToast, addHistoryRecord]);
+      loadModel('espcn');
+    };
+    img.onerror = () => {
+      addToast('error', 'Failed to load image file.');
+    };
+    img.src = url;
+  }, [addToast, loadModel]);
 
-  const handleSelectThumb = useCallback(
-    async (url: string) => {
+  /* ----------------------------------------------------------
+     HANDLE MODEL CHANGE (Per image)
+     ---------------------------------------------------------- */
+  const handleItemModelChange = useCallback(
+    async (id: string, key: ModelKey) => {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === id ? { ...i, modelKey: key, result: null, error: null } : i
+        )
+      );
+      const ok = await loadModel(key);
+      if (!ok) {
+        addToast('error', `Failed to load ${key === 'espcn' ? 'ESPCN' : 'Real-ESRGAN'} model.`);
+      }
+    },
+    [loadModel, addToast]
+  );
+
+  /* ----------------------------------------------------------
+     HANDLE OPTIONS CHANGE (Per image)
+     ---------------------------------------------------------- */
+  const handleItemOptionsChange = useCallback((id: string, newOptions: EnhancementOptions) => {
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, options: newOptions } : i))
+    );
+  }, []);
+
+  /* ----------------------------------------------------------
+     RESET SETTINGS (Per image)
+     ---------------------------------------------------------- */
+  const handleResetItemSettings = useCallback((id: string) => {
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, options: { ...DEFAULT_OPTIONS } } : i))
+    );
+    addToast('info', 'Settings reset to defaults.');
+  }, [addToast]);
+
+  /* ----------------------------------------------------------
+     HANDLE UPSCALE (Runs strictly per image in background)
+     ---------------------------------------------------------- */
+  const handleUpscaleItem = useCallback(
+    async (id: string) => {
+      const item = items.find((i) => i.id === id);
+      if (!item || item.status === 'processing' || modelLoading) return;
+
+      // Prime audio context and ask for browser notification permission on user gesture
+      primeAudio();
+      requestNotificationPermission().catch(() => { });
+
+      // Mark ONLY this specific item as processing
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === id
+            ? {
+              ...i,
+              status: 'processing',
+              error: null,
+              progress: { percent: 5, text: 'Preparing neural model...' },
+            }
+            : i
+        )
+      );
+
       try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const file = new File([blob], 'selected.jpg', { type: blob.type || 'image/jpeg' });
-        handleFile(file);
-      } catch (e) {
-        addToast('error', 'Could not load selected image.');
+        const res = await upscale(
+          item.img,
+          item.modelKey,
+          item.options,
+          (p: ProgressState) => {
+            setItems((prev) =>
+              prev.map((i) => (i.id === id ? { ...i, progress: p } : i))
+            );
+          }
+        );
+
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === id
+              ? {
+                ...i,
+                status: 'completed',
+                result: res,
+                progress: { percent: 100, text: 'Complete!' },
+              }
+              : i
+          )
+        );
+
+        const historyRecord: HistoryItem = {
+          id: makeId(),
+          type: 'upscale',
+          name: item.name,
+          originalWidth: item.width,
+          originalHeight: item.height,
+          upscaledWidth: res.width,
+          upscaledHeight: res.height,
+          scale: item.options.scale,
+          timestamp: Date.now(),
+          thumbnailUrl: item.url,
+          resultUrl: res.dataUrl || item.url,
+          timeMs: res.time,
+          enhancements: res.enhancementsApplied || [],
+        };
+        addHistoryRecord(historyRecord);
+
+        // Play pleasant completion chime & send desktop notification
+        playSuccessChime();
+        sendDesktopNotification(
+          '✨ Image Upscaled!',
+          `${item.name} (${item.options.scale}×) is ready.`,
+          item.url
+        );
+        addToast(
+          'success',
+          `✨ ${item.name} upscaled successfully! (${item.options.scale}×, ${(res.time / 1000).toFixed(1)}s)`
+        );
+      } catch (err: any) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === id
+              ? {
+                ...i,
+                status: 'error',
+                error: err.message || 'Upscaling failed.',
+                progress: { percent: 0, text: '' },
+              }
+              : i
+          )
+        );
+        addToast('error', `Failed to upscale ${item.name}: ${err.message || 'Error occurred'}`);
       }
     },
-    [handleFile, addToast]
+    [items, modelLoading, upscale, addToast, addHistoryRecord]
   );
 
-  const handleClear = useCallback(() => {
-    clearImage();
-    setResult(null);
-    setError(null);
+  /* ----------------------------------------------------------
+     REMOVE / CLEAR ITEMS
+     ---------------------------------------------------------- */
+  const handleRemoveItem = useCallback(
+    (id: string) => {
+      setItems((prev) => {
+        const next = prev.filter((i) => i.id !== id);
+        if (next.length === 0) {
+          setSelectedId(null);
+          setStep('upload');
+        } else if (selectedId === id) {
+          setSelectedId(next[0].id);
+        }
+        return next;
+      });
+    },
+    [selectedId]
+  );
+
+  const handleClearAll = useCallback(() => {
+    setItems([]);
+    setSelectedId(null);
     setStep('upload');
-    setProgress({ percent: 0, text: '' });
-  }, [clearImage]);
+  }, []);
 
-  const handleRemoveThumb = useCallback(
-    (url: string) => {
-      // If the removed thumbnail is the currently loaded image, clear the workspace image.
-      if (imageData?.url === url) {
-        handleClear();
-      }
-    },
-    [imageData, handleClear]
-  );
-
-  const handleDownload = useCallback(
-    (format: 'png' | 'webp' | 'jpeg' = 'png') => {
-      if (!result) return;
+  /* ----------------------------------------------------------
+     DOWNLOAD RESULT (Per image)
+     ---------------------------------------------------------- */
+  const handleDownloadItem = useCallback(
+    (id: string, format: 'png' | 'webp' | 'jpeg' = 'png') => {
+      const item = items.find((i) => i.id === id);
+      if (!item || !item.result) return;
+      const res = item.result;
       const canvas = document.createElement('canvas');
-      canvas.width = result.width;
-      canvas.height = result.height;
+      canvas.width = res.width;
+      canvas.height = res.height;
       const ctx = canvas.getContext('2d')!;
-      const rgbaClone = new Uint8ClampedArray(result.rgba);
-      ctx.putImageData(new ImageData(rgbaClone, result.width, result.height), 0, 0);
+      const rgbaClone = new Uint8ClampedArray(res.rgba);
+      ctx.putImageData(new ImageData(rgbaClone, res.width, res.height), 0, 0);
 
       const mime = format === 'webp' ? 'image/webp' : format === 'jpeg' ? 'image/jpeg' : 'image/png';
       const ext = format === 'webp' ? 'webp' : format === 'jpeg' ? 'jpg' : 'png';
@@ -282,7 +402,8 @@ export default function App() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `pixelify_upscaled_${options.scale}x.${ext}`;
+          const baseName = item.name.replace(/\.[^/.]+$/, '');
+          a.download = `${baseName}_upscaled_${item.options.scale}x.${ext}`;
           a.click();
           URL.revokeObjectURL(url);
         },
@@ -290,13 +411,8 @@ export default function App() {
         0.95
       );
     },
-    [result, options.scale]
+    [items]
   );
-
-  const resetSettings = useCallback(() => {
-    setOptions(DEFAULT_OPTIONS);
-    addToast('info', 'Settings reset to defaults.');
-  }, [addToast]);
 
   // Global File Picker Handler for BG Remove
   const handleBGFiles = (fileList: FileList | File[]) => {
@@ -328,23 +444,25 @@ export default function App() {
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         setIsShortcutsOpen((prev) => !prev);
       }
-      if (e.key === 'Enter' && !isProcessing && (step === 'config' || step === 'result') && imageData) {
-        handleUpscale();
+      const active = items.find((i) => i.id === selectedId) || items[0];
+      if (e.key === 'Enter' && active && active.status !== 'processing' && step !== 'upload') {
+        handleUpscaleItem(active.id);
       }
       if (e.key === 'Escape') {
         setIsShortcutsOpen(false);
         setIsHistoryOpen(false);
-        if (step !== 'processing') handleClear();
+        if (active && active.status !== 'processing') handleClearAll();
       }
-      if (e.key.toLowerCase() === 'd' && result && step === 'result') {
-        handleDownload('png');
+      if (e.key.toLowerCase() === 'd' && active && active.status === 'completed' && active.result) {
+        handleDownloadItem(active.id, 'png');
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [step, isProcessing, imageData, result, handleUpscale, handleClear, handleDownload]);
+  }, [step, items, selectedId, handleUpscaleItem, handleClearAll, handleDownloadItem]);
 
-  const visibleError = error || imageError;
+  const activeItem = items.find((i) => i.id === selectedId) || items[0];
+  const visibleError = error || activeItem?.error || null;
 
   return (
     <div className="app-shell min-h-screen font-sans bg-grid-pattern relative flex flex-col">
@@ -383,7 +501,13 @@ export default function App() {
       />
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+      <main className={`flex-1 w-full mx-auto transition-all duration-300 ${
+        activeTab === 'home'
+          ? 'w-full max-w-none p-0'
+          : activeTab === 'upscaler' && step !== 'upload'
+          ? 'max-w-[1600px] px-4 sm:px-6 pb-12'
+          : 'max-w-7xl px-4 sm:px-6 pb-12'
+      }`}>
         <Routes>
           {/* ROUTE 1: HOME PAGE (/) */}
 
@@ -406,7 +530,7 @@ export default function App() {
                     const blob = await res.blob();
                     const file = new File([blob], 'sample.jpg', { type: blob.type || 'image/jpeg' });
                     if (type === 'upscale') {
-                      handleFile(file);
+                      addUpscaleFile(file);
                       navigateTo('upscaler');
                     } else {
                       handleBGFiles([file]);
@@ -426,14 +550,14 @@ export default function App() {
             path="/upscaler"
             element={
               <div className="flex flex-col gap-8 py-4">
-  
+
                 {step === 'upload' && (
                   <UploadArea
-                    onFile={handleFile}
-                    isLoading={imageLoading}
-                    fileName={imageData?.name}
-                    fileSize={imageData?.size}
-                    onClear={handleClear}
+                    onFile={addUpscaleFile}
+                    isLoading={items.some((i) => i.status === 'processing')}
+                    fileName={items[0]?.name}
+                    fileSize={items[0]?.size}
+                    onClear={handleClearAll}
                     beforeImage="/spiderman3.jpeg"
                     afterImage="/sm3_out_hdr_2ndmodel.png"
                   />
@@ -449,28 +573,18 @@ export default function App() {
                   </>
                 ) : (
                   <UpscaleWorkspace
-                    imageUrl={imageData?.url || ''}
-                    modelKey={modelKey}
-                    step={step}
-
-                    isProcessing={isProcessing}
+                    items={items}
+                    selectedId={selectedId || (items[0]?.id ?? '')}
+                    onSelectId={setSelectedId}
+                    onRemoveId={handleRemoveItem}
+                    onAddFile={addUpscaleFile}
                     isLoading={modelLoading}
-                    hasResult={!!result}
-                      resultUrl={result?.dataUrl || ''}
-
-                    options={options}
-
-                    onOptionsChange={setOptions}
-                    onModelChange={handleModelChange}
-
-                    onUpscale={handleUpscale}
-                    onDownload={handleDownload}
-
-                    onReset={handleClear}
-                    onAddFile={handleFile}
-                    onSelectThumb={handleSelectThumb}
-                    onRemoveThumb={handleRemoveThumb}
-                    onResetSettings={resetSettings}
+                    onModelChange={handleItemModelChange}
+                    onOptionsChange={handleItemOptionsChange}
+                    onResetSettings={handleResetItemSettings}
+                    onUpscale={handleUpscaleItem}
+                    onDownload={handleDownloadItem}
+                    onReset={handleClearAll}
                   />
                 )}
                 <Footer onTabChange={navigateTo} />
@@ -494,6 +608,28 @@ export default function App() {
               </div>
             }
           />
+
+          <Route path="/story" element={
+            <PixelifyStory />
+          } />
+
+
+
+
+          <Route path="truckbg" element={
+            <TruckBg />
+
+          }>
+
+          </Route>
+
+
+
+
+
+
+
+
 
           {/* FALLBACK ROUTE: Redirect to / */}
           <Route path="*" element={<Navigate to="/" replace />} />

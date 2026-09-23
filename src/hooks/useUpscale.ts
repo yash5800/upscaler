@@ -7,7 +7,7 @@ import {
   rgbaFromTensor, 
   resizeChannel, 
   applyCanvasEnhancements,
-  
+  upscaleWithCanvas,
 } from '../utils/imageProcessing';
 import { runPass } from '../utils/upscale';
 import type { ModelKey, UpscaleResult, ProgressState, EnhancementOptions } from '../types';

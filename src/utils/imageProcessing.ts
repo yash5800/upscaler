@@ -466,3 +466,30 @@ export function applyCanvasEnhancements(
     );
   }
 }
+
+export function upscaleWithCanvas(
+  img: HTMLImageElement,
+  scale: number,
+  options?: EnhancementOptions
+): { rgba: Uint8ClampedArray; width: number; height: number } {
+  const width = Math.round((img.naturalWidth || img.width) * scale);
+  const height = Math.round((img.naturalHeight || img.height) * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, width, height);
+
+  if (options) {
+    applyCanvasEnhancements(canvas, options);
+  }
+
+  const imgData = ctx.getImageData(0, 0, width, height);
+  return {
+    rgba: imgData.data,
+    width,
+    height,
+  };
+}

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { ViewTab, ThemeMode, Backend } from '../types';
 import Icon from './Icon';
+import Logo from './Logo';
 
 interface NavbarProps {
   activeTab: ViewTab;
@@ -22,6 +23,7 @@ export default function Navbar({
   onOpenShortcuts,
 }: NavbarProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on click outside
@@ -35,63 +37,111 @@ export default function Navbar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Track scroll position to adjust header elevation
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 inset-x-0 z-50 w-full bg-[#050507]/80 backdrop-blur-2xl border-b border-white/10 shadow-2xl transition-all duration-300 select-none py-3.5 mb-3">
+    <header className="sticky top-0 inset-x-0 z-[60] w-full select-none py-3.5 bg-transparent border-none pointer-events-none transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between gap-4 relative">
-        
-        {/* LOGO (LEFT SIDE: Prominent logo.png with enlarged size) */}
+
+        {/* LOGO (LEFT SIDE: Frosted Glass Capsule with Blur) */}
         <div
           onClick={() => onTabChange('home')}
-          className="cursor-pointer group shrink-0 flex items-center"
+          className="pointer-events-auto
+            h-11
+            cursor-pointer
+            group
+            shrink-0
+            flex
+            items-center
+            bg-transparent
+            border-0
+            p-0
+            shadow-none
+            transition-transform
+            duration-300
+            active:scale-95"
         >
-          <img
-            src="/logo.png"
-            alt="Pixelify"
-            className="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-          />
+          {/* LOGO — LEFT */}
+          <button
+            type="button"
+            onClick={() => onTabChange("home")}
+            className="
+                pointer-events-auto
+                shrink-0
+                h-11
+                flex
+                items-center
+                justify-center
+                cursor-pointer
+                bg-transparent
+                border-0
+                outline-none
+                p-0
+                transition-transform
+                duration-200
+                hover:scale-[1.025]
+                active:scale-[0.97]
+              "
+            aria-label="Go to home"
+          >
+            <Logo
+              size="sm"
+              className="
+                  origin-left
+                  scale-[0.72]
+                  sm:scale-[0.78]
+                "
+            />
+          </button>
+
         </div>
 
         {/* CENTERED FLOATING PILL NAV BAR */}
-        <div className="absolute left-1/2 -translate-x-1/2 bg-white/10 border border-white/15 rounded-full p-1 flex items-center gap-1 backdrop-blur-2xl shadow-xl">
+        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 h-11 bg-white/10 border border-white/20 rounded-full p-1 flex items-center gap-1 backdrop-blur-xl shadow-xl">
           <button
             onClick={() => onTabChange('home')}
-            className={`px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-              activeTab === 'home'
+            className={`h-full px-3 sm:px-5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center ${activeTab === 'home'
                 ? 'bg-white text-black shadow-md'
                 : 'text-neutral-300 hover:text-white font-medium'
-            }`}
+              }`}
           >
             Home
           </button>
 
           <button
-            onClick={() => onTabChange('upscaler')}
-            className={`px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-              activeTab === 'upscaler'
+            onClick={() => onTabChange('bg_remove')}
+            className={`h-full px-3 sm:px-5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center ${activeTab === 'bg_remove'
                 ? 'bg-white text-black shadow-md'
                 : 'text-neutral-300 hover:text-white font-medium'
-            }`}
+              }`}
           >
-            AI Upscaler
+            BG Remover
           </button>
 
           <button
-            onClick={() => onTabChange('bg_remove')}
-            className={`px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-              activeTab === 'bg_remove'
+            onClick={() => onTabChange('upscaler')}
+            className={`h-full px-3 sm:px-5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center ${activeTab === 'upscaler'
                 ? 'bg-white text-black shadow-md'
                 : 'text-neutral-300 hover:text-white font-medium'
-            }`}
+              }`}
           >
-            BG Remover
+            AI Upscaler
           </button>
         </div>
 
         {/* SETTINGS GEAR ICON BUTTON (RIGHT SIDE) */}
-        <div className="relative ml-auto" ref={settingsRef}>
+        <div className="pointer-events-auto relative ml-auto" ref={settingsRef}>
           <button
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center justify-center transition-all shadow-md active:scale-95"
+            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-xl text-white flex items-center justify-center transition-all shadow-xl active:scale-95"
             title="Settings & Preferences"
           >
             <Icon name="settings" size={20} />
@@ -113,25 +163,22 @@ export default function Navbar({
                 <div className="grid grid-cols-3 gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
                   <button
                     onClick={() => onThemeChange('dark')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
-                      theme === 'dark' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                    }`}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'dark' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
+                      }`}
                   >
                     <span>🌙</span> Dark
                   </button>
                   <button
                     onClick={() => onThemeChange('light')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
-                      theme === 'light' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                    }`}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'light' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
+                      }`}
                   >
                     <span>☀️</span> Light
                   </button>
                   <button
                     onClick={() => onThemeChange('system')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
-                      theme === 'system' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                    }`}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'system' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
+                      }`}
                   >
                     <span>💻</span> Auto
                   </button>
@@ -171,7 +218,7 @@ export default function Navbar({
                   ?
                 </kbd>
               </button>
-          
+
             </div>
           )}
         </div>

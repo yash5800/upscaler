@@ -7,3 +7,13 @@
 7. while enhancing is ongoing the adv settings values should not be changable also, currently they can be changable while processing
 8. A black colored layer covering image while it upscaling is when scrolled coming on top header text and logo which shouldn't be there like that, suggest and implement any alternative which looks excellent
 9. The info on each section in adv settings is not showing full, it is cutting on left side, make it fully visible even if it is cross div no problem but show full info visible
+
+
+
+
+
+
+                         Your images
+                         your device
+                        your control
+                    powered by Pixelify

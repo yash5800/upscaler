@@ -16,6 +16,13 @@ export const MODELS: Record<ModelKey, ModelConfig> = {
     description:
       'Efficient Sub-Pixel CNN — a lightweight model optimized for lightning-fast 60fps inference. Processes luminance channel with crisp sub-pixel interpolation.',
     recommendation: 'Best for instant preview, quick batch jobs, and lower-spec hardware.',
+    maxScale: 4,
+    presets: ['Standard', 'Fast', 'Crisp'],
+    features: {
+      faceRestore: false,
+      colorEnhance: true,
+      hdrBoost: true,
+    },
   },
   realesrgan: {
     name: 'Real-ESRGAN Studio (4× / 8×)',
@@ -32,6 +39,13 @@ export const MODELS: Record<ModelKey, ModelConfig> = {
     description:
       'Real-ESRGAN — state-of-the-art super-resolution network that reconstructs high-frequency details, removes compression artifacts, and restores crisp focus.',
     recommendation: 'Best for portraits, professional photos, high-res prints, and 8K displays.',
+    maxScale: 8,
+    presets: ['Balanced', 'Portrait', 'Landscape', 'Artwork'],
+    features: {
+      faceRestore: true,
+      colorEnhance: true,
+      hdrBoost: true,
+    },
   },
 };
 

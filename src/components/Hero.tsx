@@ -1,80 +1,321 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { SplitText } from 'gsap/SplitText';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ThinkingOrb } from 'thinking-orbs';
+import '../index.css';
 
-interface HeroProps {
-  onUploadClick: () => void;
-  onTryDemo: () => void;
+gsap.registerPlugin(SplitText, ScrollTrigger);
+
+interface PixelifyHeroProps {
+  onLaunchUpscaler: () => void;
+  onLaunchBGRemove: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onUploadClick, onTryDemo }) => {
+export default function PixelifyHero({
+  onLaunchUpscaler,
+  onLaunchBGRemove,
+}: PixelifyHeroProps) {
+  const rootRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {
+        // Autoplay may be deferred by browser
+      });
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleMotionPreference = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (videoRef.current) {
+        if (e.matches) {
+          videoRef.current.pause();
+        } else {
+          videoRef.current.play().catch(() => { });
+        }
+      }
+    };
+    handleMotionPreference(mediaQuery);
+    mediaQuery.addEventListener?.('change', handleMotionPreference);
+
+    return () => {
+      mediaQuery.removeEventListener?.('change', handleMotionPreference);
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return;
+    }
+
+    const htElements = Array.from(
+      root.querySelectorAll<HTMLElement>('.headline .ht')
+    );
+    const poweredEl = root.querySelector<HTMLElement>('.word-powered');
+    const pixelifyEl = root.querySelector<HTMLElement>('.ai-token');
+
+    const splits = htElements
+      .map((el) => {
+        const split = SplitText.create(el, {
+          type: 'chars',
+        });
+
+        // Set per-character gradient colors so that opacity animations
+        // work natively on individual characters without background-clip mask issues
+        if (el === poweredEl) {
+          el.classList.add('is-split');
+          split.chars.forEach((char, i, arr) => {
+            const htmlChar = char as HTMLElement;
+            const alpha = 0.25 + 0.75 * (i / Math.max(1, arr.length - 1));
+            htmlChar.style.color = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+            htmlChar.style.webkitTextFillColor = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+          });
+        }
+
+        if (el === pixelifyEl) {
+          el.classList.add('is-split');
+          split.chars.forEach((char, i, arr) => {
+            const htmlChar = char as HTMLElement;
+            const alpha = 1.0 - 0.75 * (i / Math.max(1, arr.length - 1));
+            htmlChar.style.color = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+            htmlChar.style.webkitTextFillColor = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+          });
+        }
+
+        return split;
+      })
+      .filter((split) => split.chars.length > 0);
+
+    const allChars = splits.flatMap((split) => split.chars);
+
+    if (!allChars.length) return;
+
+    const ctx = gsap.context(() => {
+      const reveal = gsap.fromTo(
+        allChars,
+        {
+          opacity: 0,
+        },
+        {
+          opacity: 1,
+          ease: 'none',
+          duration: 1.25,
+          delay: 0.1,
+          stagger: {
+            each: 0.025,
+            from: 'random',
+          },
+          scrollTrigger: {
+            trigger: root.querySelector('.headline'),
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+
+      const glyphFade = gsap.from(
+        [
+          ...root.querySelectorAll<HTMLElement>(
+            '.glow-wrap, .spark, .plus'
+          ),
+        ],
+        {
+          opacity: 0,
+          ease: 'none',
+          duration: 1.2,
+          delay: 0.1,
+        }
+      );
+
+      const entrance = gsap.from(
+        [
+          ...root.querySelectorAll<HTMLElement>(
+            '.sub, .hero-actions, .hero-scroll-wrap'
+          ),
+        ],
+        {
+          opacity: 0,
+          y: 20,
+          ease: 'power2.out',
+          duration: 0.9,
+          stagger: 0.12,
+          delay: 1.05,
+          scrollTrigger: {
+            trigger: root,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+
+      if (import.meta.env.DEV) {
+        (
+          window as unknown as {
+            __pixelifyHero?: {
+              replay: () => void;
+            };
+          }
+        ).__pixelifyHero = {
+          replay: () => {
+            reveal.restart();
+            glyphFade.restart();
+            entrance.restart();
+          },
+        };
+      }
+    }, root);
+
+    return () => {
+      ctx.revert();
+      splits.forEach((split) => {
+        try {
+          split.revert();
+        } catch {
+          // ignore
+        }
+      });
+      poweredEl?.classList.remove('is-split');
+      pixelifyEl?.classList.remove('is-split');
+    };
+  }, []);
+
+  const handleScrollDown = () => {
+    const target = document.getElementById('home-content');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="relative pt-8 pb-12 overflow-hidden text-center">
-      {/* Background Aurora Orbs */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-primary/20 rounded-full blur-[140px] pointer-events-none animate-aurora-slow" />
-      <div className="absolute top-1/3 left-1/3 w-[450px] h-[300px] bg-accent/15 rounded-full blur-[160px] pointer-events-none animate-aurora-reverse" />
-      <div className="absolute top-1/4 right-1/4 w-[350px] h-[250px] bg-purple/15 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Top Tech Badge */}
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-accent mb-6 backdrop-blur-md animate-fade-in shadow-lg">
-        <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-        <span>2026 AI Studio Edition · WebGPU Accelerated</span>
-      </div>
-
-      {/* Hero Headline */}
-      <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-[1.15] mb-6">
-        <span className="text-white">Transform Blurry Images into </span>
-        <span className="gradient-text-vibrant">Stunning 8K Quality</span>
-      </h1>
-
-      {/* Hero Subtitle */}
-      <p className="text-lg sm:text-xl text-muted max-w-2xl mx-auto font-normal leading-relaxed mb-8">
-        AI-powered image enhancement with crystal-clear details, face restoration, noise removal, and lightning-fast processing.
-      </p>
-
-      {/* Hero CTA Buttons */}
-      <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
-        <button
-          onClick={onUploadClick}
-          className="group relative px-8 py-3.5 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+    <section
+      className="hero pixelify-hero"
+      ref={rootRef}
+    >
+      {/* Background Video */}
+      <div className="hero-video-wrap" aria-hidden="true">
+        <video
+          ref={videoRef}
+          className="hero-bg-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
         >
-          <svg className="w-5 h-5 text-white/90 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <span>Upload Image</span>
-        </button>
-
-        <button
-          onClick={onTryDemo}
-          className="px-8 py-3.5 rounded-xl font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-200 backdrop-blur-md hover:-translate-y-0.5 flex items-center gap-2"
-        >
-          <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Try Instant Demo</span>
-        </button>
+        <source src="/upscaled-video.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-video-overlay" />
       </div>
 
-      {/* Metrics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6 border-t border-white/10 text-left sm:text-center">
-        <div>
-          <div className="text-xl sm:text-2xl font-bold text-white">5,000,000+</div>
-          <div className="text-xs text-muted">Images Enhanced</div>
+      <div className="hero-inner">
+
+        <div className="hero-top-group">
+          {/* =====================================================
+              STAIRCASE HEADLINE
+              ===================================================== */}
+
+          <h1
+            className="headline"
+            aria-label="Your images, your device, your control, powered by Pixelify"
+          >
+            {/* LINE 1 */}
+            <span className="line dim-1 step-1">
+              <span className="ht">
+                Your images
+              </span>
+            </span>
+
+            {/* LINE 2 */}
+            <span className="line dim-2 step-2">
+              <span className="ht">
+                your device
+              </span>
+            </span>
+
+            {/* LINE 3 */}
+            <span className="line dim-2 step-3">
+              <span className="ht">
+                your control
+              </span>
+            </span>
+
+            {/* LINE 4 */}
+            <span className="line bright step-4">
+              <span aria-hidden="true">
+                <span className="ht word-powered">
+                  powered
+                </span>{' '}
+                <span className="ht">
+                  by
+                </span>{' '}
+
+                <span className="glow-wrap">
+                  <ThinkingOrb
+                    state="solving"
+                    size={64}
+                  />
+                </span>{' '}
+
+                <span className="ht ai-token">
+                  Pixelify
+                </span>
+              </span>
+            </span>
+          </h1>
+
+          {/* SUBTITLE */}
+          <p className="sub">
+            Upscale, restore, and transform your images locally,
+            directly in your browser. No uploads. No cloud processing.
+          </p>
+
+          {/* ACTIONS */}
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="hero-secondary"
+              onClick={onLaunchUpscaler}
+            >
+              Launch AI Upscaler
+              <span>↗</span>
+            </button>
+
+            <button
+              type="button"
+              className="hero-secondary"
+              onClick={onLaunchBGRemove}
+            >
+              BG Remover
+              <span>↗</span>
+            </button>
+          </div>
         </div>
-        <div>
-          <div className="text-xl sm:text-2xl font-bold text-accent">Sub-Second</div>
-          <div className="text-xs text-muted">WebGPU Inference</div>
+
+        {/* SCROLL DOWN INDICATOR */}
+        <div className="hero-scroll-wrap">
+          <button
+            type="button"
+            className="hero-scroll-btn group"
+            onClick={handleScrollDown}
+            aria-label="Scroll down to studio options"
+          >
+            <span className="hero-scroll-text">SCROLL</span>
+            <div className="hero-scroll-pill">
+              <span className="hero-scroll-dot" />
+            </div>
+          </button>
         </div>
-        <div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-400">100% On-Device</div>
-          <div className="text-xs text-muted">Complete Privacy</div>
-        </div>
-        <div>
-          <div className="text-xl sm:text-2xl font-bold text-purple">Up to 8K</div>
-          <div className="text-xs text-muted">Super-Resolution</div>
-        </div>
+
       </div>
-    </div>
+    </section>
   );
-};
-
-export default Hero;
+}

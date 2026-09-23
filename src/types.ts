@@ -12,6 +12,12 @@ export interface ModelBadges {
   req: string;
 }
 
+export interface ModelFeatures {
+  faceRestore?: boolean;
+  colorEnhance?: boolean;
+  hdrBoost?: boolean;
+}
+
 export interface ModelConfig {
   name: string;
   file: string;
@@ -22,6 +28,9 @@ export interface ModelConfig {
   badges: ModelBadges;
   description: string;
   recommendation: string;
+  maxScale?: number;
+  presets?: string[];
+  features?: ModelFeatures;
 }
 
 export interface ImageData {
@@ -34,18 +43,26 @@ export interface ImageData {
   size: number;
 }
 
-export interface EnhancementOptions {
-  scale: ScaleFactor;
-  faceRestore: boolean;
-  removeNoise: boolean;
-  sharpen: boolean;
-  colorEnhance: boolean;
-  hdrBoost: boolean;
+export type UpscaleStatus = 'idle' | 'processing' | 'completed' | 'error';
+
+export interface UpscaleItem {
+  id: string;
+  file: File;
+  name: string;
+  url: string;
+  img: HTMLImageElement;
+  width: number;
+  height: number;
+  size: number;
+  status: UpscaleStatus;
+  progress: ProgressState;
+  result: ProcessResult | null;
+  error: string | null;
+  options: EnhancementOptions;
+  modelKey: ModelKey;
 }
 
-// Extended numeric levels for more granular controls (backwards compatible)
 export interface EnhancementOptions {
-  // existing fields kept for compatibility
   scale: ScaleFactor;
   faceRestore: boolean;
   removeNoise: boolean;
@@ -57,6 +74,9 @@ export interface EnhancementOptions {
   sharpenLevel?: number;
   removeNoiseLevel?: number;
   faceRestoreLevel?: number;
+  sharpness?: number;
+  denoise?: number;
+  faceEnhancement?: number;
   colorLevel?: number;
   hdrLevel?: number;
   brightness?: number;
