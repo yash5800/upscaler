@@ -8,6 +8,8 @@ import type {
   UpscaleItem,
 } from "../types";
 import ParameterSlider from "./ParameterSlider";
+import SolvingOrb from "./SolvingOrb";
+import "./solving-orb.css";
 import {
   Sparkles,
   RotateCcw,
@@ -309,55 +311,57 @@ export default function UpscaleWorkspace({
       <div className="flex-1 min-w-0 flex flex-col gap-4 w-full">
         
         {/* 5. IMAGE SHOWCASE DIV (Big, properly fits uploaded image in view) */}
-        <div className="relative w-full min-h-[540px] lg:min-h-[690px] max-h-[80vh] rounded-2xl border border-white/[0.08] bg-[#070709] flex items-center justify-center overflow-hidden p-3 sm:p-6 shadow-2xl isolate">
+        <div className="relative w-full h-[540px] lg:h-[690px] max-h-[80vh] rounded-2xl border border-white/[0.08] bg-[#070709] flex items-center justify-center overflow-hidden p-3 sm:p-6 shadow-2xl isolate">
           {/* Subtle canvas grid pattern */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:20px_20px] opacity-40" />
 
           {hasResult && resultUrl ? (
             <BeforeAfterSlider before={imageUrl} after={resultUrl} />
           ) : (
-            <div className="relative flex h-full w-full max-h-[76vh] items-center justify-center">
+            <div className="relative flex h-full w-full items-center justify-center">
               <img
                 src={imageUrl}
                 alt={activeItem.name || "Uploaded preview"}
                 className="
                   block
-                  max-h-[74vh]
-                  max-w-full
+                  h-full
+                  w-full
                   object-contain
                   select-none
-                  rounded-xl
-                  shadow-[0_20px_70px_rgba(0,0,0,0.85)]
                 "
                 draggable={false}
               />
             </div>
           )}
 
-          {/* 8. HIGH-TECH NEURAL SCANNER PROCESSING OVERLAY (No Header Bleed) */}
+          {/* SOLVING ORB PROCESSING OVERLAY — progress ring + solving orb + % (no tiles/steps) */}
           {isProcessing && (
-            <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-hidden rounded-2xl bg-black/35 backdrop-blur-[2px]">
-              {/* Laser scanline sweeping effect */}
-              <div className="absolute inset-x-0 h-32 bg-gradient-to-b from-transparent via-[#00FF85]/25 to-transparent animate-scanline pointer-events-none" />
+            <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-hidden rounded-2xl bg-black/45 backdrop-blur-[3px]">
+              <div className="relative z-20 flex flex-col items-center gap-4 rounded-3xl border border-white/15 bg-[#0c0c10]/90 px-10 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+                {/* Determinate ring: real % from the inference pipeline, mint variant.
+                    state="connecting": we don't use SolvingOrb's locked 'solving' —
+                    we render OrbProgressRing directly via the exported component's
+                    state override below (connecting = pulsing handshake). */}
+                <SolvingOrb
+                  size={160}
+                  variant="mint"
+                  loop={false}
+                  progress={Math.min(1, Math.max(0.03, (activeItem.progress?.percent ?? 0) / 100))}
+                  stateOverride="connecting"
+                />
 
-              {/* Floating frosted glass status badge */}
-              <div className="relative z-20 flex flex-col items-center rounded-2xl border border-white/15 bg-[#0c0c10]/90 px-8 py-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-xl">
-                <div className="relative mb-3 flex h-10 w-10 items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-[#00FF85]/20 blur-md animate-pulse" />
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-[#00FF85] shadow-[0_0_12px_rgba(0,255,133,0.5)]" />
-                  <ImageCircleIcon className="absolute h-4 w-4 text-[#00FF85] animate-pulse" />
+                {/* LIVE PERCENTAGE */}
+                <div className="font-mono text-4xl font-black tabular-nums tracking-tight text-white">
+                  {Math.min(100, Math.max(0, Math.round(activeItem.progress?.percent ?? 0)))}
+                  <span className="text-xl font-bold text-[#00FF85]">%</span>
                 </div>
 
-                <div className="text-base font-bold tracking-wide text-white">
-                  Enhancing {activeItem.name}…
+                <div className="max-w-[280px] truncate text-base font-bold tracking-wide text-white">
+                  Enhancing {activeItem.name}
                 </div>
 
-                <div className="mt-1 text-xs text-white/60">
-                  {activeItem.progress?.text || "AI is reconstructing high-frequency details"}
-                </div>
-
-                <div className="mt-3.5 flex items-center gap-2 rounded-full border border-[#00FF85]/30 bg-[#00FF85]/10 px-3.5 py-1 text-[10px] font-semibold text-[#00FF85]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#00FF85] animate-ping" />
+                <div className="flex items-center gap-2 rounded-full border border-[#00FF85]/30 bg-[#00FF85]/10 px-3.5 py-1 text-[10px] font-semibold text-[#00FF85]">
+                  <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#00FF85]" />
                   <span>Neural Super-Resolution Active</span>
                 </div>
               </div>
@@ -933,14 +937,13 @@ function BeforeAfterSlider({
       onPointerDown={handlePointerDown}
       className="
         relative
-        max-h-[76vh]
-        max-w-full
+        h-full
+        w-full
         overflow-hidden
         rounded-xl
         touch-none
         select-none
         cursor-ew-resize
-        shadow-[0_30px_100px_rgba(0,0,0,.75)]
       "
     >
       {/* =====================================================
@@ -955,8 +958,8 @@ function BeforeAfterSlider({
         draggable={false}
         className="
           block
-          max-h-[76vh]
-          max-w-full
+          h-full
+          w-full
           object-contain
           select-none
         "
@@ -1360,7 +1363,7 @@ function UploadStrip({
             THUMBNAILS
            ================================================== */}
         {items.length > 0 && (
-          <div className="flex items-center gap-2.5 overflow-x-auto py-1">
+          <div className="flex items-center gap-2.5 py-1 overflow-x-auto px-2 ">
             {items.map((item) => {
               const isSelected = item.id === selectedId;
               const isProcessing = item.status === "processing";
@@ -1388,7 +1391,7 @@ function UploadStrip({
                   >
                     <img
                       src={item.url}
-                      className="h-full w-full object-cover select-none"
+                      className="h-full w-full object-cover select-none bg-[repeating-conic-gradient(#1a1a20_0%_25%,#121216_0%_50%)] [background-size:12px_12px]"
                       alt={item.name}
                       draggable={false}
                     />

@@ -15,6 +15,8 @@ interface BGRemoveWorkspaceProps {
   onOpenPicker: () => void;
   onAddHistoryRecord?: (item: HistoryItem) => void;
   onFileAdd?: (files: FileList | File[]) => void;
+  /** Live engine reported by the processing worker ('wasm' | 'webgpu') */
+  onEngineReport?: (engine: 'wasm' | 'webgpu', webgpuAvailable: boolean) => void;
 }
 
 type TabType = 'cutout' | 'background' | 'effects' | 'adjust' | 'design';
@@ -49,6 +51,7 @@ export default function BGRemoveWorkspace({
   onOpenPicker,
   onAddHistoryRecord,
   onFileAdd,
+  onEngineReport,
 }: BGRemoveWorkspaceProps) {
   const [selectedId, setSelectedId] = useState<string | null>(jobs[0]?.id || null);
   const [activeTab, setActiveTab] = useState<TabType>('cutout');
@@ -85,7 +88,91 @@ export default function BGRemoveWorkspace({
     strokeWidth: 4,
   });
 
-  const pipelineRef = useRef<any>(null);
+  /* ----------------------------------------------------------
+     OFF-MAIN-THREAD PIPELINE (Web Worker)
+     The BiRefNet model used to run on the main thread, which
+     froze the whole page during inference. It now runs inside a
+     dedicated Web Worker — same approach as the ONNX proxy in
+     the upscaler — so the UI stays smooth while processing.
+     ---------------------------------------------------------- */
+  const workerRef = useRef<Worker | null>(null);
+  const progressCbRef = useRef<((pct: number) => void) | null>(null);
+  const jobResolversRef = useRef(
+    new Map<string, { resolve: (blob: Blob, elapsedMs: number) => void; reject: (err: any) => void }>()
+  );
+
+  function getWorker(): Worker {
+    if (!workerRef.current) {
+      const worker = new Worker(
+        new URL('../workers/bgRemover.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+
+      worker.addEventListener('error', (ev: ErrorEvent) => {
+        console.error('BG worker fatal error:', ev.message, ev);
+        const err = new Error(ev.message || 'Worker crashed');
+        jobResolversRef.current.forEach((entry) => entry.reject(err));
+        jobResolversRef.current.clear();
+      });
+
+      worker.addEventListener('messageerror', () => {
+        const err = new Error('Worker message serialization failed');
+        jobResolversRef.current.forEach((entry) => entry.reject(err));
+        jobResolversRef.current.clear();
+      });
+
+      worker.addEventListener('message', (e: MessageEvent) => {
+        const msg = e.data;
+
+        if (msg.type === 'PROGRESS') {
+          progressCbRef.current?.(msg.progress);
+          return;
+        }
+
+        if (msg.type === 'READY') {
+          // Worker finished loading the pipeline: report its REAL engine
+          onEngineReport?.(msg.engine === 'webgpu' ? 'webgpu' : 'wasm', !!msg.webgpuAvailable);
+          return;
+        }
+
+        if (msg.type === 'DONE') {
+          const entry = jobResolversRef.current.get(msg.id);
+          if (entry) {
+            jobResolversRef.current.delete(msg.id);
+            entry.resolve(msg.blob, msg.elapsedMs);
+          }
+          return;
+        }
+
+        if (msg.type === 'ERROR') {
+          if (msg.id == null) {
+            // Worker-level failure (e.g. model init): reject everything pending
+            jobResolversRef.current.forEach((entry) => entry.reject(new Error(msg.message)));
+            jobResolversRef.current.clear();
+          } else {
+            const entry = jobResolversRef.current.get(msg.id);
+            if (entry) {
+              jobResolversRef.current.delete(msg.id);
+              entry.reject(new Error(msg.message));
+            }
+          }
+        }
+      });
+
+      workerRef.current = worker;
+    }
+    return workerRef.current;
+  }
+
+  // Pre-warm the worker (and start the model download) as soon as the page opens
+  useEffect(() => {
+    try {
+      getWorker().postMessage({ type: 'INIT' });
+    } catch (e) {
+      console.warn('BG worker init failed, will retry on first job:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selected = jobs.find((job) => job.id === selectedId) ?? jobs[0];
 
@@ -103,38 +190,30 @@ export default function BGRemoveWorkspace({
     setJobs((items) => items.map((item) => (item.id === id ? { ...item, ...changes } : item)));
   };
 
-  async function getRemover(onProgress: (pct: number) => void) {
-    if (pipelineRef.current) return pipelineRef.current;
-    try {
-      const { pipeline } = await import('@huggingface/transformers');
-      pipelineRef.current = pipeline('background-removal', 'studioludens/birefnet-lite-512', {
-        dtype: 'fp32',
-        progress_callback: (event: any) => {
-          if (event.status === 'progress' && event.total) {
-            onProgress(Math.round((event.loaded / event.total) * 78));
-          }
-        },
-      });
-      return await pipelineRef.current;
-    } catch (error) {
-      pipelineRef.current = null;
-      throw error;
-    }
-  }
-
   async function processJob(job: BGJob) {
-    const startedAt = performance.now();
     updateJob(job.id, { status: 'loading', progress: 5, message: 'Loading AI model...' });
     try {
-      const remover = await getRemover((progress) =>
-        updateJob(job.id, { progress, message: 'Downloading neural network...' })
-      );
+      const worker = getWorker();
+
+      // Model download progress arrives via the shared PROGRESS channel
+      progressCbRef.current = (pct) =>
+        updateJob(job.id, {
+          progress: Math.min(78, Math.max(5, Math.round(pct * 0.78))),
+          message: 'Downloading neural network...',
+        });
+
+      const { blob, elapsedMs } = await new Promise<{ blob: Blob; elapsedMs: number }>((resolve, reject) => {
+        jobResolversRef.current.set(job.id, {
+          resolve: (b, ms) => resolve({ blob: b, elapsedMs: ms }),
+          reject,
+        });
+        worker.postMessage({ type: 'REMOVE_BG', id: job.id, url: job.sourceUrl });
+      });
+      progressCbRef.current = null;
+
       updateJob(job.id, { status: 'processing', progress: 85, message: 'Detecting background cutout...' });
 
-      const output = await remover(job.sourceUrl);
-      const blob = await output.toBlob('image/png');
       const url = URL.createObjectURL(blob);
-      const elapsedMs = Math.round(performance.now() - startedAt);
 
       updateJob(job.id, {
         status: 'done',
@@ -168,9 +247,12 @@ export default function BGRemoveWorkspace({
 
       addToast('success', `${job.name} background removed!`);
     } catch (err: any) {
-      console.error(err);
-      updateJob(job.id, { status: 'error', message: 'Cutout process failed.' });
-      addToast('error', 'Could not process background removal for this image.');
+      console.error('processJob failed:', err);
+      updateJob(job.id, {
+        status: 'error',
+        message: `Cutout failed: ${err?.message || 'unknown error'}`,
+      });
+      addToast('error', `Cutout failed: ${err?.message || 'unknown error'}`);
     }
   }
 
@@ -741,7 +823,7 @@ export default function BGRemoveWorkspace({
                     <img
                       src={job.resultUrl || job.sourceUrl}
                       alt={job.name}
-                      className="w-full h-full object-cover bg-neutral-900"
+                      className="h-full w-full object-contain bg-[repeating-conic-gradient(#1a1a20_0%_25%,#121216_0%_50%)] [background-size:12px_12px]"
                     />
 
                     {isSelected && (
@@ -821,38 +903,6 @@ export default function BGRemoveWorkspace({
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/10 bg-surface/50 p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center">
-                <Icon name="spark" size={22} />
-              </div>
-              <h4 className="text-base font-bold text-white">BiRefNet Neural Cutouts</h4>
-              <p className="text-xs text-muted leading-relaxed">
-                State-of-the-art bilateral reference network detects hair strands, transparent glass, and intricate background edges.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-surface/50 p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-                <Icon name="image" size={22} />
-              </div>
-              <h4 className="text-base font-bold text-white">Interactive Brush Canvas</h4>
-              <p className="text-xs text-muted leading-relaxed">
-                Fine-tune edges post-processing with real-time Erase and Restore brushes, custom brush radii, zoom lens, and undo/redo stacks.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-surface/50 p-6 flex flex-col gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <Icon name="check" size={22} />
-              </div>
-              <h4 className="text-base font-bold text-white">100% Private Local WebGPU</h4>
-              <p className="text-xs text-muted leading-relaxed">
-                All image data and AI models execute strictly within your web browser using Transformers.js and WebGPU/WASM. Zero server uploads.
-              </p>
             </div>
           </section>
         </div>

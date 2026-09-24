@@ -1,22 +1,63 @@
 import React, { useState } from 'react';
 import { FAQS } from '../constants';
 
-export const FAQSection: React.FC = () => {
+interface FAQSectionProps {
+  /** Optional custom FAQ list; falls back to the upscaler FAQS constant */
+  faqs?: { q: string; a: string }[];
+  title?: string;
+  subtitle?: string;
+  /** Emit FAQPage JSON-LD for Google rich results / Ads landing page quality */
+  withJsonLd?: boolean;
+  /** Optional base name for JSON-LD ids when multiple FAQ sections exist on one page */
+  jsonLdIdSuffix?: string;
+}
+
+export const FAQSection: React.FC<FAQSectionProps> = ({
+  faqs = FAQS,
+  title = 'Frequently Asked Questions',
+  subtitle = 'Everything you need to know about browser-based AI upscaling.',
+  withJsonLd = false,
+  jsonLdIdSuffix,
+}) => {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   const toggle = (idx: number) => {
     setOpenIdx(openIdx === idx ? null : idx);
   };
 
+  const ldId = jsonLdIdSuffix ? `faq-jsonld-${jsonLdIdSuffix}` : 'faq-jsonld';
+
   return (
     <section className="py-16 border-t border-white/10">
+      {/* FAQPage structured data for search engines */}
+      {withJsonLd && (
+        <script
+          type="application/ld+json"
+          id={ldId}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: f.a,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
+
       <div className="max-w-xl mx-auto text-center mb-12">
-        <h2 className="text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
-        <p className="text-sm text-muted mt-2">Everything you need to know about browser-based AI upscaling.</p>
+        <h2 className="text-3xl font-extrabold text-white">{title}</h2>
+        <p className="text-sm text-muted mt-2">{subtitle}</p>
       </div>
 
       <div className="max-w-3xl mx-auto space-y-3">
-        {FAQS.map((faq, idx) => {
+        {faqs.map((faq, idx) => {
           const isOpen = openIdx === idx;
           return (
             <div

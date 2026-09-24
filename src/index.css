@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -515,6 +515,8 @@ html.light .gradient-text {
   letter-spacing: -0.045em;
 
   text-align: center;
+
+  margin-top: 68px;
 }
 
 
@@ -585,13 +587,65 @@ html.light .gradient-text {
 
 
 /* ==========================================================================
+   TRIO COMPOSITION: "YOUR" + [IMAGES / DEVICE / CONTROL]
+   ========================================================================== */
+
+.pixelify-hero .hero-trio-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto clamp(6px, 1vw, 16px);
+}
+
+.pixelify-hero .hero-trio-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 2vw, 32px);
+  text-align: left;
+}
+
+.pixelify-hero .hero-serif-your {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 800;
+  font-size: clamp(112px, 18.5vw, 194px);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pixelify-hero .hero-trio-stack {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  gap: clamp(3px, 0.4vw, 7px);
+  transform: translateY(10px);
+}
+
+.pixelify-hero .hero-stack-item {
+  display: block;
+  font-weight: 700;
+  font-size: clamp(18px, 3vw, 44px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-transform: lowercase;
+}
+
+
+/* ==========================================================================
    TEXT DEPTH
    ========================================================================== */
 
+.pixelify-hero .dim-1,
 .pixelify-hero .line.dim-1 {
   color: var(--dim-1);
 }
 
+.pixelify-hero .dim-2,
 .pixelify-hero .line.dim-2 {
   color: var(--dim-2);
 }

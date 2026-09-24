@@ -1,26 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { ViewTab, ThemeMode, Backend } from '../types';
+import type { ViewTab, ThemeMode } from '../types';
 import Icon from './Icon';
 import Logo from './Logo';
+
+type Engine = 'webgpu' | 'wasm' | null;
 
 interface NavbarProps {
   activeTab: ViewTab;
   onTabChange: (tab: ViewTab) => void;
-  theme: ThemeMode;
-  onThemeChange: (mode: ThemeMode) => void;
-  backend: Backend | null;
-  historyCount: number;
-  onOpenShortcuts: () => void;
+  /** Live engine of the upscaler's ONNX session (from session EPs) */
+  upscalerEngine: Engine;
+  /** Live engine reported by the BG remover worker pipeline */
+  bgEngine: Engine;
+  historyCount?: number;
+}
+
+/** Small dynamic engine pill used in the settings dropdown */
+function EngineRow({ label, engine }: { label: string; engine: Engine }) {
+  return (
+    <div className="flex items-center justify-between text-[11px]">
+      <span className="font-semibold text-neutral-400">{label}</span>
+      {engine === null ? (
+        <span className="inline-flex items-center gap-1.5 font-mono text-[9.5px] font-bold text-neutral-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">
+          <span className="h-1 w-1 rounded-full bg-neutral-500 animate-pulse" />
+          DETECTING…
+        </span>
+      ) : engine === 'webgpu' ? (
+        <span
+          className="font-mono text-[9.5px] font-bold text-[#00FF85] bg-[#00FF85]/10 border border-[#00FF85]/20 px-1.5 py-0.5 rounded"
+          title="Hardware-accelerated GPU inference"
+        >
+          WEBGPU
+        </span>
+      ) : (
+        <span
+          className="font-mono text-[9.5px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/20 px-1.5 py-0.5 rounded"
+          title="WebAssembly (CPU) inference — WebGPU was unavailable or failed"
+        >
+          WASM (CPU)
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function Navbar({
   activeTab,
   onTabChange,
-  theme,
-  onThemeChange,
-  backend,
-  historyCount,
-  onOpenShortcuts,
+  upscalerEngine,
+  bgEngine,
+  historyCount = 0,
 }: NavbarProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -150,39 +179,10 @@ export default function Navbar({
           {/* SETTINGS DROPDOWN MENU */}
           {isSettingsOpen && (
             <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-[#121218] border border-white/15 p-3.5 shadow-2xl z-50 animate-fade-in flex flex-col gap-3">
-              <div className="px-1 py-0.5 border-b border-white/10 flex items-center justify-between text-xs font-bold text-white pb-2">
+              <div className="px-1 py-0.5 border-b border-white/10 flex flex-col gap-1.5 text-xs font-bold text-white pb-2">
                 <span>Settings & Preferences</span>
-                <span className="text-[10px] font-mono text-[#00FF85] bg-[#00FF85]/10 px-1.5 py-0.5 rounded border border-[#00FF85]/20">
-                  WebGPU PRO
-                </span>
-              </div>
-
-              {/* THEME PREFERENCES */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[11px] font-semibold text-neutral-400">Appearance Theme</span>
-                <div className="grid grid-cols-3 gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-                  <button
-                    onClick={() => onThemeChange('dark')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'dark' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                      }`}
-                  >
-                    <span>🌙</span> Dark
-                  </button>
-                  <button
-                    onClick={() => onThemeChange('light')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'light' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                      }`}
-                  >
-                    <span>☀️</span> Light
-                  </button>
-                  <button
-                    onClick={() => onThemeChange('system')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${theme === 'system' ? 'bg-[#00FF85] text-black shadow' : 'text-neutral-300 hover:text-white'
-                      }`}
-                  >
-                    <span>💻</span> Auto
-                  </button>
-                </div>
+                <EngineRow label="AI Upscaler engine" engine={upscalerEngine} />
+                <EngineRow label="BG Remover engine" engine={bgEngine} />
               </div>
 
               {/* LOCAL HISTORY */}
@@ -195,28 +195,11 @@ export default function Navbar({
               >
                 <div className="flex items-center gap-2">
                   <Icon name="history" size={16} className="text-[#00FF85]" />
-                  <span>View Processing History</span>
+                  <span>History</span>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-[#00FF85]/20 text-[#00FF85] text-[10px] font-bold font-mono">
                   {historyCount} items
                 </span>
-              </button>
-
-              {/* KEYBOARD SHORTCUTS */}
-              <button
-                onClick={() => {
-                  onOpenShortcuts();
-                  setIsSettingsOpen(false);
-                }}
-                className="w-full text-left px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <span>⌨️</span>
-                  <span>Keyboard Shortcuts</span>
-                </div>
-                <kbd className="px-1.5 py-0.5 rounded bg-black/40 text-[10px] text-white border border-white/10 font-mono">
-                  ?
-                </kbd>
               </button>
 
             </div>

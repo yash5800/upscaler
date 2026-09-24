@@ -66,7 +66,7 @@ export default function BGRemoverSection({ onLaunchBGRemove }: BGRemoverSectionP
 
         .bgr-3d-popup img {
           position: absolute;
-          height: 80%;
+          height: 79%;
           top: 50%;
           left: 50%;
           opacity: 0;
@@ -107,7 +107,7 @@ export default function BGRemoverSection({ onLaunchBGRemove }: BGRemoverSectionP
             >
               <h3
                 className={`text-2xl sm:text-3xl lg:text-[36px] font-bold tracking-tight transition-colors duration-300 leading-tight ${
-                  activeTab === 0 ? 'text-neutral-950' : 'text-neutral-300 hover:text-neutral-500'
+                  activeTab === 0 ? 'text-neutral-950' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
                 <span className="text-[#00C86A]">Remove Image Background</span> 100% free and unlimited.
@@ -147,7 +147,7 @@ export default function BGRemoverSection({ onLaunchBGRemove }: BGRemoverSectionP
             >
               <h3
                 className={`text-2xl sm:text-3xl lg:text-[36px] font-bold tracking-tight transition-colors duration-300 leading-tight ${
-                  activeTab === 1 ? 'text-neutral-950' : 'text-neutral-300 hover:text-neutral-500'
+                  activeTab === 1 ? 'text-neutral-950' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
                 <span className={activeTab === 1 ? 'text-[#00C86A]' : ''}>100% On-Device Privacy</span> with zero cloud uploads.
@@ -187,7 +187,7 @@ export default function BGRemoverSection({ onLaunchBGRemove }: BGRemoverSectionP
             >
               <h3
                 className={`text-2xl sm:text-3xl lg:text-[36px] font-bold tracking-tight transition-colors duration-300 leading-tight ${
-                  activeTab === 2 ? 'text-neutral-950' : 'text-neutral-300 hover:text-neutral-500'
+                  activeTab === 2 ? 'text-neutral-950' : 'text-neutral-400 hover:text-neutral-600'
                 }`}
               >
                 <span className={activeTab === 2 ? 'text-[#00C86A]' : ''}>Custom Backdrops</span> & full original resolution export.

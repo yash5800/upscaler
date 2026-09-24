@@ -9,15 +9,23 @@ import UpscaleWorkspace from './components/UpscaleWorkspace';
 // ProcessingOverlay and StatsBar are no longer used here
 import ErrorMessage from './components/ErrorMessage';
 import HistoryDrawer from './components/HistoryDrawer';
-import ShortcutsModal from './components/ShortcutsModal';
 import FeatureGrid from './components/FeatureGrid';
 import HowItWorks from './components/HowItWorks';
 import FAQSection from './components/FAQSection';
+import AdvantagesSection from './components/AdvantagesSection';
 import Footer from './components/Footer';
 
 import { useONNX } from './hooks/useONNX';
 import { useUpscale } from './hooks/useUpscale';
 import { makeId } from './lib/bgUtils';
+import {
+  FAQS,
+  UPSCALER_ADVANTAGES,
+  BG_FEATURES,
+  BG_HOW_IT_WORKS,
+  BG_FAQS,
+  BG_ADVANTAGES,
+} from './constants';
 
 
 import TruckBg from './components/TruckBg';
@@ -66,7 +74,6 @@ export default function App() {
   const activeTab = getActiveTab();
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Theme state management
@@ -118,8 +125,14 @@ export default function App() {
   const [bgJobs, setBgJobs] = useState<BGJob[]>([]);
 
   // Upscaler State Hooks
-  const { ortRef, backend, sessionRef, isLoading: modelLoading, initONNX, loadModel } = useONNX();
+  const { ortRef, backend, execEngine, sessionRef, isLoading: modelLoading, initONNX, loadModel } = useONNX();
   const { upscale } = useUpscale({ ortRef, sessionRef });
+
+  // LIVE ENGINE STATE — what each tool's pipeline is ACTUALLY running on right now.
+  // Upscaler: read back from the ONNX session's execution providers.
+  // BG remover: reported by the worker hosting the BiRefNet pipeline.
+  const [bgEngine, setBgEngine] = useState<'wasm' | 'webgpu' | null>(null);
+  const [bgWebgpuAvailable, setBgWebgpuAvailable] = useState<boolean>(false);
 
   const [step, setStep] = useState<Step>('upload');
   const [items, setItems] = useState<UpscaleItem[]>([]);
@@ -179,6 +192,16 @@ export default function App() {
   useEffect(() => {
     initONNX();
   }, [initONNX]);
+
+  // Pre-warm the upscaler model when visiting /upscaler so the engine badge
+  // reports LIVE immediately (and first upscale starts faster). ESPCN is tiny (~235KB).
+  const engineWarmupTried = useRef(false);
+  useEffect(() => {
+    if (activeTab === 'upscaler' && !engineWarmupTried.current && !execEngine && !modelLoading) {
+      engineWarmupTried.current = true;
+      loadModel('espcn').catch(() => { /* badge stays DETECTING; retried on first upload */ });
+    }
+  }, [activeTab, execEngine, modelLoading, loadModel]);
 
   /* ----------------------------------------------------------
      ADD UPSCALE FILE (Creates individual UpscaleItem)
@@ -438,28 +461,16 @@ export default function App() {
     addToast('success', `${additions.length} image(s) added to Cutout Canvas.`);
   };
 
-  // Keyboard Shortcuts Listener
+  // Escape Listener for History Drawer
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-        setIsShortcutsOpen((prev) => !prev);
-      }
-      const active = items.find((i) => i.id === selectedId) || items[0];
-      if (e.key === 'Enter' && active && active.status !== 'processing' && step !== 'upload') {
-        handleUpscaleItem(active.id);
-      }
       if (e.key === 'Escape') {
-        setIsShortcutsOpen(false);
         setIsHistoryOpen(false);
-        if (active && active.status !== 'processing') handleClearAll();
-      }
-      if (e.key.toLowerCase() === 'd' && active && active.status === 'completed' && active.result) {
-        handleDownloadItem(active.id, 'png');
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [step, items, selectedId, handleUpscaleItem, handleClearAll, handleDownloadItem]);
+  }, []);
 
   const activeItem = items.find((i) => i.id === selectedId) || items[0];
   const visibleError = error || activeItem?.error || null;
@@ -493,11 +504,9 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         onTabChange={navigateTo}
-        theme={theme}
-        onThemeChange={setTheme}
-        backend={backend}
+        upscalerEngine={execEngine}
+        bgEngine={bgEngine}
         historyCount={history.length}
-        onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />
 
       {/* MAIN CONTENT AREA */}
@@ -565,13 +574,30 @@ export default function App() {
 
                 <ErrorMessage message={visibleError} onDismiss={() => setError(null)} />
 
-                {step === 'upload' ? (
+                {step === 'upload' && (
                   <>
                     <FeatureGrid />
-                    <HowItWorks />
-                    <FAQSection />
+                    <HowItWorks />  
                   </>
-                ) : (
+                )}
+                {step === 'upload' && (
+                  <AdvantagesSection
+                    eyebrow="Quick Advantages"
+                    title="Fast. Free. Private."
+                    subtitle="Built for speed and privacy — the four reasons users keep Pixelify bookmarked."
+                    items={UPSCALER_ADVANTAGES}
+                  />
+                )}
+                {step === 'upload' && (
+                  <FAQSection
+                    title="Upscaler FAQ"
+                    subtitle="Common questions about AI super-resolution, formats, and privacy."
+                    faqs={FAQS}
+                    withJsonLd
+                    jsonLdIdSuffix="upscaler-ws"
+                  />
+                )}
+                {step !== 'upload' && (
                   <UpscaleWorkspace
                     items={items}
                     selectedId={selectedId || (items[0]?.id ?? '')}
@@ -591,8 +617,6 @@ export default function App() {
               </div>
             }
           />
-
-          {/* ROUTE 3: BACKGROUND REMOVER CANVAS (/bg_remove) */}
           <Route
             path="/bg_remove"
             element={
@@ -603,7 +627,40 @@ export default function App() {
                   addToast={addToast}
                   onOpenPicker={() => fileInputRef.current?.click()}
                   onAddHistoryRecord={addHistoryRecord}
+                  onEngineReport={(engine, webgpuAvailable) => {
+                    setBgEngine(engine);
+                    setBgWebgpuAvailable(webgpuAvailable);
+                  }}
                 />
+                {bgJobs.length === 0 && (
+                  <>
+                    <FeatureGrid
+                      eyebrow="Cutout Studio Capabilities"
+                      title="Why choose Pixelify Background Remover?"
+                      subtitle="Everything you need for one-click neural cutouts, background replacement, and studio-ready exports — right in your browser."
+                      features={BG_FEATURES}
+                    />
+                    <HowItWorks
+                      title="How to remove a background"
+                      subtitle="From upload to transparent PNG in under a minute."
+                      steps={BG_HOW_IT_WORKS}
+                    />
+                    <AdvantagesSection
+                      eyebrow="Advantages of Pixelify Cutout"
+                      title="Built for speed, privacy & polish"
+                      subtitle="The four reasons teams switch from cloud background removers to Pixelify."
+                      items={BG_ADVANTAGES}
+                      accent="text-cyan-400"
+                    />
+                    <FAQSection
+                      title="Background Remover FAQ"
+                      subtitle="Everything to know about AI cutouts, formats, privacy, and exports."
+                      faqs={BG_FAQS}
+                      withJsonLd
+                      jsonLdIdSuffix="bg-remove"
+                    />
+                  </>
+                )}
                 <Footer onTabChange={navigateTo} />
               </div>
             }
@@ -652,9 +709,6 @@ export default function App() {
           }}
         />
       )}
-
-      {/* SHORTCUTS MODAL */}
-      <ShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
 
     </div>
   );

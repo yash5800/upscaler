@@ -17,33 +17,6 @@ export default function PixelifyHero({
   onLaunchBGRemove,
 }: PixelifyHeroProps) {
   const rootRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {
-        // Autoplay may be deferred by browser
-      });
-    }
-
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleMotionPreference = (e: MediaQueryListEvent | MediaQueryList) => {
-      if (videoRef.current) {
-        if (e.matches) {
-          videoRef.current.pause();
-        } else {
-          videoRef.current.play().catch(() => { });
-        }
-      }
-    };
-    handleMotionPreference(mediaQuery);
-    mediaQuery.addEventListener?.('change', handleMotionPreference);
-
-    return () => {
-      mediaQuery.removeEventListener?.('change', handleMotionPreference);
-    };
-  }, []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -203,7 +176,6 @@ export default function PixelifyHero({
       {/* Background Video */}
       <div className="hero-video-wrap" aria-hidden="true">
         <video
-          ref={videoRef}
           className="hero-bg-video"
           autoPlay
           loop
@@ -211,7 +183,7 @@ export default function PixelifyHero({
           playsInline
           preload="auto"
         >
-        <source src="/upscaled-video.mp4" type="video/mp4" />
+          <source src="/upscaled-video.mp4" type="video/mp4" />
         </video>
         <div className="hero-video-overlay" />
       </div>
@@ -227,24 +199,23 @@ export default function PixelifyHero({
             className="headline"
             aria-label="Your images, your device, your control, powered by Pixelify"
           >
-            {/* LINE 1 */}
-            <span className="line dim-1 step-1">
-              <span className="ht">
-                Your images
-              </span>
-            </span>
-
-            {/* LINE 2 */}
-            <span className="line dim-2 step-2">
-              <span className="ht">
-                your device
-              </span>
-            </span>
-
-            {/* LINE 3 */}
-            <span className="line dim-2 step-3">
-              <span className="ht">
-                your control
+            {/* FIRST 3 LINES: YOUR + [IMAGES / DEVICE / CONTROL] */}
+            <span className="hero-trio-row">
+              <span className="hero-trio-wrap">
+                <span className="hero-serif-your dim-1">
+                  <span className="ht">YOUR</span>
+                </span>
+                <span className="hero-trio-stack">
+                  <span className="hero-stack-item dim-2">
+                    <span className="ht">images</span>
+                  </span>
+                  <span className="hero-stack-item dim-2">
+                    <span className="ht">device</span>
+                  </span>
+                  <span className="hero-stack-item dim-2">
+                    <span className="ht">control</span>
+                  </span>
+                </span>
               </span>
             </span>
 
@@ -283,20 +254,21 @@ export default function PixelifyHero({
             <button
               type="button"
               className="hero-secondary"
-              onClick={onLaunchUpscaler}
+              onClick={onLaunchBGRemove}
             >
-              Launch AI Upscaler
+              Launch BG Remover
               <span>↗</span>
             </button>
 
             <button
               type="button"
               className="hero-secondary"
-              onClick={onLaunchBGRemove}
+              onClick={onLaunchUpscaler}
             >
-              BG Remover
+              Launch AI Upscaler
               <span>↗</span>
             </button>
+
           </div>
         </div>
 

@@ -147,7 +147,160 @@ export const FAQS = [
     a: 'We support PNG, JPEG, WEBP, GIF, and SVG inputs, with output options for lossless PNG, optimized WebP, or high-quality JPEG.'
   },
   {
-    q: 'What are the keyboard shortcuts?',
-    a: 'Press Ctrl+V (or Cmd+V) anywhere to paste an image, Space bar to toggle Before/After compare mode, Esc to reset, F for Fullscreen, and D to download output.'
+    q: 'Do I need to install software or create an account?',
+    a: 'No installation and no registration are required. Pixelify works directly in your browser — open the page, drop an image, and start upscaling. No sign-up, no email, no watermark on results.'
+  },
+  {
+    q: 'Can I use the AI upscaler on my phone or tablet?',
+    a: 'Yes. The studio is fully responsive and works on modern mobile browsers such as Chrome and Safari. For the fastest processing we recommend a device with WebGPU support, but WebAssembly fallback keeps it working everywhere.'
+  },
+  {
+    q: 'Is the upscaled result watermarked?',
+    a: 'Never. Output images are rendered locally on your device and downloaded without any watermark, logo, or quality cap — what you export is exactly what you see in the preview.'
+  }
+];
+
+/* ==========================================================================
+   BACKGROUND REMOVER PAGE CONTENT (SEO / ADS-READY SECTIONS)
+   ========================================================================== */
+
+export const BG_FEATURES = [
+  {
+    icon: '🪄',
+    title: 'One-Click Neural Cutouts',
+    description: 'BiRefNet AI detects your subject instantly and strips the background in a single click — no manual lassoing or green-screen required.'
+  },
+  {
+    icon: '💇',
+    title: 'Hair & Fur Precision',
+    description: 'Bilateral reference segmentation preserves fine hair strands, fur, and semi-transparent edges that basic background erasers destroy.'
+  },
+  {
+    icon: '🖼️',
+    title: 'Replace or Blur Backgrounds',
+    description: 'Drop your subject onto transparent, solid color, gradient, or custom photo backgrounds without ever leaving the canvas.'
+  },
+  {
+    icon: '🖌️',
+    title: 'Erase & Restore Brushes',
+    description: 'Refine any edge after processing with real-time brushes, adjustable radii, zoom lens, and a full undo / redo history stack.'
+  },
+  {
+    icon: '✨',
+    title: 'Studio-Ready Effects',
+    description: 'Add soft drop shadows, outlines, and brightness / contrast / saturation adjustments for polished e-commerce ready images.'
+  },
+  {
+    icon: '🔒',
+    title: '100% Private & Free',
+    description: 'The neural network runs entirely inside your browser with Transformers.js. No uploads, no account, no watermark, and unlimited images.'
+  }
+];
+
+export const BG_HOW_IT_WORKS = [
+  {
+    num: '01',
+    title: 'Upload Your Image',
+    desc: 'Drag & drop a PNG, JPG, or WebP photo up to 15 MB, paste it with Ctrl+V, or click a sample image to try it instantly.',
+    icon: '📥'
+  },
+  {
+    num: '02',
+    title: 'AI Removes the Background',
+    desc: 'The BiRefNet model segments your subject on-device in seconds — hair, glass, and complex edges included — fully automatically.',
+    icon: '🪄'
+  },
+  {
+    num: '03',
+    title: 'Refine, Replace & Download',
+    desc: 'Swap the background, apply effects, brush-fix edges, then export a transparent PNG, WebP, or JPG with one click.',
+    icon: '⚡'
+  }
+];
+
+export const BG_FAQS = [
+  {
+    q: 'How do I remove the background from a photo for free?',
+    a: 'Open the Background Remover page, drag your image into the upload area, and the AI cutout starts automatically. When processing finishes you can download a transparent PNG for free — no sign-up, no credits, and no watermark.'
+  },
+  {
+    q: 'Are my images uploaded to a server?',
+    a: 'No. Pixelify runs the BiRefNet segmentation model directly inside your browser using Transformers.js with WebGPU / WebAssembly. Your photos never leave your device, which makes it safe for private or client work.'
+  },
+  {
+    q: 'Which image formats are supported?',
+    a: 'You can upload PNG, JPG, and WebP images up to 15 MB. Results export as transparent PNG (recommended for cutouts), WebP for the web, or JPG with a solid background.'
+  },
+  {
+    q: 'Can I replace the background with another photo or color?',
+    a: 'Yes. After the cutout completes, open the Background tab to place your subject on a transparent, solid color, gradient preset, or your own uploaded photo — then download the composite in one click.'
+  },
+  {
+    q: 'Does it work on hair, fur, and transparent objects?',
+    a: 'Yes. The bilateral reference (BiRefNet) architecture is specifically trained to preserve hair strands, fur, glass, and semi-transparent edges far better than classic color-key tools.'
+  },
+  {
+    q: 'Can I use it on a phone or tablet?',
+    a: 'Yes. The workspace is fully responsive and works in mobile browsers like Chrome and Safari. On devices without WebGPU it automatically falls back to WebAssembly, so cutouts still work everywhere.'
+  },
+  {
+    q: 'Why does the first image take longer to process?',
+    a: 'The neural model (roughly 40 MB) is downloaded to your browser cache the first time. After that it is reused, so every following image is processed much faster.'
+  }
+];
+
+/* ==========================================================================
+   ADVANTAGE STRIPS (DLBunny-STYLE "Advantages" SECTIONS)
+   ========================================================================== */
+
+export interface AdvantageItem {
+  title: string;
+  desc: string;
+  icon: string;
+}
+
+export const UPSCALER_ADVANTAGES: AdvantageItem[] = [
+  {
+    title: 'Free & Unlimited',
+    desc: 'Upscale as many photos as you want — there are no daily caps, credits, or subscriptions.',
+    icon: '♾️'
+  },
+  {
+    title: 'No Sign-Up Required',
+    desc: 'Open the page and start working immediately. No account, email, or login ever needed.',
+    icon: '🚫'
+  },
+  {
+    title: 'Runs on Your Device',
+    desc: 'WebGPU / WASM inference means zero uploads — ideal for private, NDA, or client images.',
+    icon: '💻'
+  },
+  {
+    title: 'Watermark-Free Output',
+    desc: 'Download lossless PNG or WebP exports with no watermark, logo, or quality penalty.',
+    icon: '✅'
+  }
+];
+
+export const BG_ADVANTAGES: AdvantageItem[] = [
+  {
+    title: 'Completely Free',
+    desc: 'Bookmark the page and remove backgrounds from unlimited images, free forever.',
+    icon: '🆓'
+  },
+  {
+    title: 'No Registration',
+    desc: 'No account or email needed — drop an image and the AI starts cutting instantly.',
+    icon: '🔓'
+  },
+  {
+    title: 'Private by Design',
+    desc: 'Every cutout is computed locally in your browser. Images are never uploaded anywhere.',
+    icon: '🛡️'
+  },
+  {
+    title: 'Email & GitHub Support',
+    desc: 'Hit a problem? Reach the team through the support links in the footer and get help fast.',
+    icon: '📮'
   }
 ];

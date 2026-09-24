@@ -3,7 +3,7 @@ import type { ModelKey } from '../types';
 
 interface OrtModule {
   InferenceSession: {
-    create: (path: string | Uint8Array) => Promise<InferenceSession>;
+    create: (path: string | Uint8Array, options?: any) => Promise<InferenceSession>;
   };
   Tensor: new (type: string, data: Float32Array, shape: number[]) => Tensor;
   env: {
@@ -19,6 +19,8 @@ interface InferenceSession {
   inputNames: string[];
   outputNames: string[];
   run: (inputs: Record<string, Tensor>) => Promise<Record<string, Tensor>>;
+  /** ORT internals: lets us read back the EP the session ACTUALLY created with */
+  handler?: { executionProviders?: string[] };
 }
 
 interface Tensor {
@@ -26,11 +28,15 @@ interface Tensor {
 }
 
 export async function loadONNX(): Promise<OrtModule> {
+  // ort-web 1.19.2 all-in-one ESM bundle: contains BOTH webgpu (jsep) and wasm
+  // execution providers, and — unlike 1.17.x — the webgpu EP actually works
+  // with env.wasm.proxy (ORT's worker). wasmPaths resolve the matching
+  // ort-wasm-simd-threaded.jsep.{mjs,wasm} artifacts from the same dist.
   const ort: OrtModule = await import(
-    'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/esm/ort.min.js'
-  );
+    'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.all.bundle.min.mjs'
+  ) as any;
   ort.env.wasm.wasmPaths =
-    'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
+    'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/';
   ort.env.wasm.proxy = true;
   if (!crossOriginIsolated) {
     ort.env.wasm.numThreads = 1;
@@ -53,7 +59,30 @@ async function fetchModelWithCache(path: string): Promise<Uint8Array> {
 export async function createSession(ort: OrtModule, modelKey: ModelKey): Promise<InferenceSession> {
   const m = MODELS[modelKey];
   const data = await fetchModelWithCache(m.file);
-  return ort.InferenceSession.create(data);
+  // WebGPU FIRST, automatic WASM fallback: probe for a real GPU adapter up
+  // front. No adapter (or session creation failure) → wasm through the proxy
+  // worker. The session is tagged with the EP that ACTUALLY won so the
+  // Settings indicator reports the truth, not a guess.
+  let adapterOk = false;
+  try {
+    const gpu = (navigator as any).gpu;
+    if (gpu) adapterOk = !!(await gpu.requestAdapter());
+  } catch {
+    adapterOk = false;
+  }
+
+  if (adapterOk) {
+    try {
+      const session = await ort.InferenceSession.create(data, { executionProviders: ['webgpu'] });
+      (session as any).__engine = 'webgpu';
+      return session;
+    } catch (e) {
+      console.warn('WebGPU session creation failed, falling back to WASM:', e);
+    }
+  }
+  const session = await ort.InferenceSession.create(data, { executionProviders: ['wasm'] });
+  (session as any).__engine = 'wasm';
+  return session;
 }
 
 export async function runPass(
@@ -88,10 +117,8 @@ export async function runPass(
       const pct =
         (passIdx * 100) / totalPasses +
         (done / totalTiles) * 100 / totalPasses;
-      const label =
-        totalPasses > 1
-          ? `Pass ${passIdx + 1}/${totalPasses} · tile ${done}/${totalTiles}`
-          : `Tile ${done}/${totalTiles}`;
+      // Progress text stays human (no tile/pass bookkeeping — the ring + % show momentum)
+      const label = `Reconstructing details… ${Math.round(pct)}%`;
       onProgress(Math.round(pct), label);
       await new Promise((r) => setTimeout(r, 0));
 
