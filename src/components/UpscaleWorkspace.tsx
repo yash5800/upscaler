@@ -26,6 +26,7 @@ import {
   playSuccessChime,
   primeAudio,
 } from "../utils/notifications";
+import UpscalerLoader from "./upscaling-loader";
 
 /* ============================================================
    IMAGE CIRCLE ICON (Replacement for header star)
@@ -337,18 +338,20 @@ export default function UpscaleWorkspace({
           {/* SOLVING ORB PROCESSING OVERLAY — progress ring + solving orb + % (no tiles/steps) */}
           {isProcessing && (
             <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-hidden rounded-2xl bg-black/45 backdrop-blur-[3px]">
-              <div className="relative z-20 flex flex-col items-center gap-4 rounded-3xl border border-white/15 bg-[#0c0c10]/90 px-10 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+              <div className="relative z-20 flex flex-col items-center gap-4 rounded-3x px-10 py-8 text-center">
                 {/* Determinate ring: real % from the inference pipeline, mint variant.
                     state="connecting": we don't use SolvingOrb's locked 'solving' —
                     we render OrbProgressRing directly via the exported component's
                     state override below (connecting = pulsing handshake). */}
-                <SolvingOrb
+                {/* <SolvingOrb
                   size={160}
                   variant="mint"
                   loop={false}
                   progress={Math.min(1, Math.max(0.03, (activeItem.progress?.percent ?? 0) / 100))}
                   stateOverride="connecting"
-                />
+                /> */}
+
+                <UpscalerLoader/>
 
                 {/* LIVE PERCENTAGE */}
                 <div className="font-mono text-4xl font-black tabular-nums tracking-tight text-white">
